@@ -1,0 +1,21 @@
+{
+  "name": "lucy",
+  "version": "1.0.0",
+  "description": "a simple lexer , LL(1) , LR(1) npm lib. ",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "www.baidu.com"
+  },
+  "keywords": [
+    "compiler",
+    "LL(1)",
+    "LR(1)",
+    "lexer"
+  ],
+  "author": "linYuan",
+  "license": "ISC"
+}

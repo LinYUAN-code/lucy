@@ -11,13 +11,17 @@ type Tocken = {
 };
 type NonTerminal = string;
 type Terminal = string;
-type Grammer = string;
+type Grammer = {
+  nonTerminal: NonTerminal,
+  derivations: Array<Array<NonTerminal | Terminal>>
+};
 type Grammers = Array<Grammer>;
 type GrammerSetLine = {
-  nonTerminal: NonTerminal;
-  terminals: Array<Terminal>;
+  tocken: NonTerminal | Terminal;
+  terminals: Set<Terminal>;
+  isTerminal?: boolean;
 };
-type grammerSet = Array<GrammerSetLine>;
+type GrammerSet = Array<GrammerSetLine>;
 
 type PredictLine = {
   nonTerminal: string;

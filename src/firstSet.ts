@@ -104,3 +104,31 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
         return setLine;
     });
 }
+
+
+export function getDerivationFirstSet(lexer: Lexer, derivation: string[], firstSetMap: Map<NonTerminal, GrammerSetLine>): GrammerSetLine {
+    const terminals = new Set<Terminal>();
+    for (let i = 0; i < derivation.length; i++) {
+        const tocken = derivation[i];
+        if (lexer.isTerminal(tocken)) {
+            if (tocken !== EmptyCharacter) {
+                terminals.add(tocken);
+                break;
+            }
+        } else {
+            firstSetMap.get(tocken)?.terminals.forEach(terminal => {
+                terminals.add(terminal);
+            })
+            if (!firstSetMap.get(tocken)!.terminals.has(EmptyCharacter)) {
+                break;
+            }
+        }
+        if (i === derivation.length - 1) {
+            terminals.add(EmptyCharacter);
+        }
+    }
+    return {
+        tocken: derivation.join(""),
+        terminals,
+    }
+}

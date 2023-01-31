@@ -3,12 +3,15 @@ import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
 import log, { nullLogChannel } from "@/utils/log";
 import { EmptyCharacter } from "@/utils/const";
+import generatorPredictTable from "@/LL0/predictTable";
+import { transferString2Grammers } from "@/utils";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
     terminalsSet: Array<[string, RegExp]>,
     grammers: Array<string>,
     firstSetAnswer: GrammerSet,
     followSetAnswer: GrammerSet,
+    predictTable?: PredictTable,
 }> = [
         {
             nonTerminalSymbol: [
@@ -134,7 +137,8 @@ const testCases: Array<{
                     tocken: "F",
                     terminals: new Set(["*", "+", "$", ")"])
                 }
-            ]
+            ],
+            predictTable: []
         }
     ]
 
@@ -168,6 +172,16 @@ test("first set test", () => {
         const followSet = generateFllowSet(lexer, testCase.grammers, firstSet);
         log.log("[followSet]", followSet, testCase.followSetAnswer);
         expect(followSet).toEqual(testCase.followSetAnswer);
+        if (testCase.predictTable) {
+            log.logTo(console);
+            const predictTable = generatorPredictTable(lexer, transferString2Grammers(lexer, testCase.grammers), firstSet, followSet);
+            log.log(predictTable);
+            for (let x of predictTable) {
+                for (let terminal of x.terminal2Derivation.keys()) {
+                    log.log(terminal, " ", x.terminal2Derivation.get(terminal));
+                }
+            }
+        }
     }
 
 })

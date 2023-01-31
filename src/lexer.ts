@@ -1,3 +1,4 @@
+import { safeRegCharacter } from "./utils";
 import log from "./utils/log";
 
 export default class Lexer {
@@ -45,7 +46,7 @@ export default class Lexer {
         }
       }
       for (let terminal of this.terminals) {
-        const matchResult = str.match(new RegExp("^" + terminal[0]))
+        const matchResult = str.match(new RegExp("^" + safeRegCharacter(terminal[0])))
         if (matchResult) {
           terminals.push(terminal[0]);
           str = str.slice(matchResult[0].length);

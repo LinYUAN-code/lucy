@@ -102,5 +102,14 @@ export default function generateFllowSet(lexer: Lexer, inGrammers: Array<string>
         } else {
             return 1;
         }
+    }).map(setLine => {
+        setLine.terminals = new Set(Array.from(setLine.terminals).sort((a, b) => {
+            if (a < b) {
+                return -1;
+            } else {
+                return 1;
+            }
+        }))
+        return setLine;
     });
 }

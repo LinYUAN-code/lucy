@@ -2,6 +2,7 @@ import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
 import log, { nullLogChannel } from "@/utils/log";
+import { EmptyCharacter } from "@/utils/const";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
     terminalsSet: Array<[string, RegExp]>,
@@ -70,6 +71,70 @@ const testCases: Array<{
                     terminals: new Set(["$"])
                 }
             ]
+        },
+        {
+            nonTerminalSymbol: [
+                "E'", "E", "T'", "T", "F"
+            ],
+            terminalsSet: [
+                [EmptyCharacter, /ε/],
+                ["int", /123/],
+                ["+", /\+/],
+                ["*", /\*/],
+                ["(", /\(/],
+                [")", /\)/],
+            ],
+            grammers: [
+                "E  =>  T E'",
+                "E' =>  + T E' | ε",
+                "T  =>  F T'",
+                "T' =>  * F T' | ε",
+                "F  => ( E ) | int"
+            ],
+            firstSetAnswer: [
+                {
+                    tocken: "E",
+                    terminals: new Set(["(", "int"]),
+                },
+                {
+                    tocken: "T",
+                    terminals: new Set(["(", "int"])
+                },
+                {
+                    tocken: "F",
+                    terminals: new Set(["(", "int"])
+                },
+                {
+                    tocken: "T'",
+                    terminals: new Set(["*", EmptyCharacter])
+                },
+                {
+                    tocken: "E'",
+                    terminals: new Set(["+", EmptyCharacter])
+                }
+            ],
+            followSetAnswer: [
+                {
+                    tocken: "E",
+                    terminals: new Set([")", "$"])
+                },
+                {
+                    tocken: "E'",
+                    terminals: new Set([")", "$"])
+                },
+                {
+                    tocken: "T",
+                    terminals: new Set(["+", "$", ")"])
+                },
+                {
+                    tocken: "T'",
+                    terminals: new Set(["+", "$", ")"])
+                },
+                {
+                    tocken: "F",
+                    terminals: new Set(["*", "+", "$", ")"])
+                }
+            ]
         }
     ]
 
@@ -77,7 +142,6 @@ const testCases: Array<{
 test("first set test", () => {
     log.logTo(nullLogChannel);
     for (let i = 0; i < testCases.length; i++) {
-        if (i > 0) log.logTo(console);
         const testCase = testCases[i];
         const lexer = new Lexer(testCase.terminalsSet, testCase.nonTerminalSymbol);
         [testCase.firstSetAnswer, testCase.followSetAnswer].forEach(grammerSet => {
@@ -88,9 +152,18 @@ test("first set test", () => {
                     return 1;
                 }
             })
+            grammerSet.forEach(setLine => {
+                setLine.terminals = new Set(Array.from(setLine.terminals).sort((a, b) => {
+                    if (a < b) {
+                        return -1;
+                    } else {
+                        return 1;
+                    }
+                }))
+            })
         })
         const firstSet = generateFirstSet(lexer, testCase.grammers);
-        log.log("[firstSet]", firstSet);
+        log.log("[firstSet]", firstSet, testCase.firstSetAnswer);
         expect(firstSet).toEqual(testCase.firstSetAnswer);
         const followSet = generateFllowSet(lexer, testCase.grammers, firstSet);
         log.log("[followSet]", followSet, testCase.followSetAnswer);

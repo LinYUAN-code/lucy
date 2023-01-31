@@ -18,7 +18,7 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
         grammerMap.set(grammer.nonTerminal, grammer.derivations);
     })
     /* 
-        1. 如果X式一个终结符号，那么FIRST(X) = X 
+        如果X式一个终结符号，那么FIRST(X) = X 
     */
     firstSet.push(...lexer.terminals.map(terminal => {
         return {
@@ -27,15 +27,26 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
             isTerminal: true
         }
     }))
+    /* 
+        如果 X => ε 是一个产生式，那么将e加人到 FIRST（X)中。
+    */
+    firstSet.forEach(setLine => {
+        if (setLine.isTerminal) return;
+        for (let derivation of grammerMap.get(setLine.tocken)!) {
+            if (derivation.length === 1 && derivation[0] === EmptyCharacter && !setLine.terminals.has(EmptyCharacter)) {
+                setLine.terminals.add(EmptyCharacter);
+            }
+        }
+    })
     const firstSetMap = new Map<string, GrammerSetLine>();
     for (let setLine of firstSet) {
         firstSetMap.set(setLine.tocken, setLine);
     }
-    // 循环下面三个步骤 直到没有变化为止
+    // 循环下面步骤 直到没有变化为止
     while (true) {
         let hasChange = false;
         /* 
-            2. 如果叉是一个非终结符号，且8一子上⋯！是一个产生式，其中么三1，那么如果对于某个i,a在FIRST(Y.)中且e在所有的 FIRST(F)、FIRST（Y2）、•、FIRSTC¥.-1)中，就把。加人到
+            如果叉是一个非终结符号，且8一子上⋯！是一个产生式，其中么三1，那么如果对于某个i,a在FIRST(Y.)中且e在所有的 FIRST(F)、FIRST（Y2）、•、FIRSTC¥.-1)中，就把。加人到
             FIRST(X)中。也就是说，V⋯V;一1三E。如果对于所有的j=1，2，⋯，后，E在FIRST（¥)中，那么将e加人到 FIRST(X)中。比如，FIRST（¥）中的所有符号一定在FIRST(8)中。
             如果丫，不能推导出e，那么我们就不会再向FIRST(X)中加人任何符号，但是期果上，三e，那么我们就加上
             FIRST（Y2），依此类推。 
@@ -74,19 +85,13 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
                 }
             }
         })
-        /* 
-            3.如果 X => ε 是一个产生式，那么将e加人到 FIRST（X)中。
-        */
-        firstSet.forEach(setLine => {
-            if (setLine.isTerminal) return;
-            for (let derivation of grammerMap.get(setLine.tocken)!) {
-                if (derivation.length === 1 && derivation[0] === EmptyCharacter && !setLine.terminals.has(EmptyCharacter)) {
-                    hasChange = true;
-                    setLine.terminals.add(EmptyCharacter);
-                }
-            }
-        })
         if (!hasChange) break;
     }
-    return firstSet.filter(v => !v.isTerminal);
+    return firstSet.filter(v => !v.isTerminal).sort((a, b) => {
+        if (a.tocken < b.tocken) {
+            return -1;
+        } else {
+            return 1;
+        }
+    });
 }

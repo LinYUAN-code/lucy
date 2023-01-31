@@ -1,7 +1,7 @@
 import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
-import log from "@/utils/log";
+import log, { nullLogChannel } from "@/utils/log";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
     terminalsSet: Array<[string, RegExp]>,
@@ -63,7 +63,7 @@ const testCases: Array<{
                 },
                 {
                     tocken: "A",
-                    terminals: new Set(["b", "a", "ε", "$"])
+                    terminals: new Set(["b", "a", "c", "$"])
                 },
                 {
                     tocken: "S",
@@ -75,24 +75,26 @@ const testCases: Array<{
 
 
 test("first set test", () => {
-    for (let testCase of testCases) {
+    log.logTo(nullLogChannel);
+    for (let i = 0; i < testCases.length; i++) {
+        if (i > 0) log.logTo(console);
+        const testCase = testCases[i];
         const lexer = new Lexer(testCase.terminalsSet, testCase.nonTerminalSymbol);
-        const firstSet = generateFirstSet(lexer, testCase.grammers).sort((a, b) => {
-            if (a.tocken < b.tocken) {
-                return -1;
-            } else {
-                return 1;
-            }
-        });
-        expect(firstSet).toEqual(testCase.firstSetAnswer.sort((a, b) => {
-            if (a.tocken < b.tocken) {
-                return -1;
-            } else {
-                return 1;
-            }
-        }));
-        // const followSet = generateFllowSet(lexer, testCase.grammers);
-        // expect(followSet).toBe(testCase.followSetAnswer);
+        [testCase.firstSetAnswer, testCase.followSetAnswer].forEach(grammerSet => {
+            grammerSet.sort((a, b) => {
+                if (a.tocken < b.tocken) {
+                    return -1;
+                } else {
+                    return 1;
+                }
+            })
+        })
+        const firstSet = generateFirstSet(lexer, testCase.grammers);
+        log.log("[firstSet]", firstSet);
+        expect(firstSet).toEqual(testCase.firstSetAnswer);
+        const followSet = generateFllowSet(lexer, testCase.grammers, firstSet);
+        log.log("[followSet]", followSet, testCase.followSetAnswer);
+        expect(followSet).toEqual(testCase.followSetAnswer);
     }
 
 })

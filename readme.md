@@ -1,5 +1,14 @@
 # lucy
 
+## 快速使用
+
+iife: https://linyuan-code.github.io/lucy/dist/index.iife.js
+esm: https://linyuan-code.github.io/lucy/dist/index.esm.js
+
+## demo website
+
+open https://linyuan-code.github.io/lucy/demo/index.html in browser and open debug-tool-console
+
 ## 词法分析
 
 使用 JS 的原生正则表达式进行词法分析

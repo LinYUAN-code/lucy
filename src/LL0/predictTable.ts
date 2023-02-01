@@ -71,6 +71,18 @@ export default function generatorPredictTable(
 }
 
 
-export function checkPredickTableIsValid(table: PredictTable): boolean {
+export function checkPredickTableIsValid(lexer: Lexer, table: PredictTable): boolean {
+  // 每一Cell最多只能有一个推导式 
+  for (let terminal of lexer.terminals) {
+    const tocken = terminal[0];
+    table.forEach(tableLine => {
+      const t2d = tableLine.terminal2Derivation.get(tocken);
+      if (t2d) {
+        if (t2d.derivations.length > 1) {
+          return false;
+        }
+      }
+    })
+  }
   return true;
 }

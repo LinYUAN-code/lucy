@@ -25,6 +25,6 @@ type GrammerSet = Array<GrammerSetLine>;
 
 type PredictLine = {
   nonTerminal: string;
-  terminal2Derivation: Map<Terminal, Grammer>;
+  terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;
 };
 type PredictTable = Array<PredictLine>;

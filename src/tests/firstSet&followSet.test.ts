@@ -3,7 +3,7 @@ import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
 import log, { nullLogChannel } from "@/utils/log";
 import { EmptyCharacter } from "@/utils/const";
-import generatorPredictTable from "@/LL0/predictTable";
+import generatorPredictTable, { checkPredickTableIsValid } from "@/LL0/predictTable";
 import { transferString2Grammers } from "@/utils";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
@@ -11,7 +11,7 @@ const testCases: Array<{
     grammers: Array<string>,
     firstSetAnswer: GrammerSet,
     followSetAnswer: GrammerSet,
-    predictTable?: PredictTable,
+    predictTable?: any,
 }> = [
         {
             nonTerminalSymbol: [
@@ -138,7 +138,47 @@ const testCases: Array<{
                     terminals: new Set(["*", "+", "$", ")"])
                 }
             ],
-            predictTable: []
+            predictTable: [
+                {
+                    "nonTerminal": "E'",
+                    "terminal2Derivation": {
+                        "+": { "nonTerminal": "E'", "derivations": [["+", "T", "E'"]] },
+                        "$": { "nonTerminal": "E'", "derivations": [["ε"]] },
+                        ")": { "nonTerminal": "E'", "derivations": [["ε"]] }
+                    }
+                },
+                {
+                    "nonTerminal": "E",
+                    "terminal2Derivation": {
+                        "(": { "nonTerminal": "E", "derivations": [["T", "E'"]] },
+                        "int": { "nonTerminal": "E", "derivations": [["T", "E'"]] }
+                    }
+                },
+                {
+                    "nonTerminal": "T'",
+                    "terminal2Derivation": {
+                        "*": { "nonTerminal": "T'", "derivations": [["*", "F", "T'"]] },
+                        "$": { "nonTerminal": "T'", "derivations": [["ε"]] },
+                        ")": { "nonTerminal": "T'", "derivations": [["ε"]] },
+                        "+": { "nonTerminal": "T'", "derivations": [["ε"]] }
+                    }
+                },
+                {
+                    "nonTerminal": "T",
+                    "terminal2Derivation": {
+                        "(": { "nonTerminal": "T", "derivations": [["F", "T'"]] },
+                        "int": { "nonTerminal": "T", "derivations": [["F", "T'"]] }
+                    }
+                },
+                {
+                    "nonTerminal": "F",
+                    "terminal2Derivation": {
+                        "(": { "nonTerminal": "F", "derivations": [["(", "E", ")"]] },
+                        "int": { "nonTerminal": "F", "derivations": [["int"]] }
+                    }
+                }
+            ]
+
         }
     ]
 
@@ -175,12 +215,12 @@ test("first set test", () => {
         if (testCase.predictTable) {
             log.logTo(console);
             const predictTable = generatorPredictTable(lexer, transferString2Grammers(lexer, testCase.grammers), firstSet, followSet);
-            log.log(predictTable);
-            for (let x of predictTable) {
-                for (let terminal of x.terminal2Derivation.keys()) {
-                    log.log(terminal, " ", x.terminal2Derivation.get(terminal));
-                }
+            expect(checkPredickTableIsValid(lexer, predictTable)).toBe(true);
+            for (let tableLine of predictTable) {
+                tableLine.terminal2Derivation = Object.fromEntries(tableLine.terminal2Derivation as Map<Terminal, Grammer>);
             }
+            log.log(predictTable, "\n------------------\n", testCase.predictTable);
+            expect(predictTable).toEqual(testCase.predictTable);
         }
     }
 

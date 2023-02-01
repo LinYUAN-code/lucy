@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <script src="../dist/index.iife.js"></script>
+  <script>
+    const testCase = {
+      nonTerminalSymbol: ["E'", "E", "T'", "T", "F"],
+      terminalsSet: [
+        ["ε", /^ε/],
+        ["int", /^(0|[1-9][0-9]*)/],
+        ["+", /^\+/],
+        ["*", /^\*/],
+        ["(", /^\(/],
+        [")", /^\)/],
+      ],
+      grammers: [
+        "E  =>  T E'",
+        "E' =>  + T E' | ε",
+        "T  =>  F T'",
+        "T' =>  * F T' | ε",
+        "F  => ( E ) | int",
+      ],
+    };
+    console.log(lucy);
+    const ll0Parser = new lucy.LL0Parser(
+      testCase.terminalsSet,
+      testCase.nonTerminalSymbol,
+      testCase.grammers
+    );
+    const firstSet = ll0Parser.getFirstSet();
+    const followSet = ll0Parser.getFollowSet(firstSet);
+    const predictTable = ll0Parser.getPredictTable(firstSet, followSet);
+    const predictResult = ll0Parser.getPredictProcess(
+      "11 + 22 * 33",
+      "E",
+      predictTable
+    );
+    console.log(firstSet);
+    console.log(followSet);
+    console.log(predictTable);
+    console.log(predictResult);
+  </script>
+  <body>
+    Lucy Demo
+  </body>
+</html>

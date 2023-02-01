@@ -1,2 +1,2 @@
 export * from "./parser";
-export * from "./predictTable";
+export { default as LL0Parser } from "./parser"

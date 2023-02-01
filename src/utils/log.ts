@@ -1,4 +1,6 @@
+/*START.ONLYTEST*/
 import colors from "colors"
+/*END.ONLYTEST*/
 
 enum LogLevel {
     Normal,
@@ -22,23 +24,36 @@ class Logger {
     }
     log(...info: any[]) {
         if (this.logLevel <= LogLevel.Normal) {
+            /*START.ONLYTEST*/
             colors.enable();
-            this.logChannel.log("[normal]".rainbow, ...info);
+            /*END.ONLYTEST*/
+            this.logChannel.log("[normal]"/*START.ONLYTEST*/.rainbow/*END.ONLYTEST*/, ...info);
+            /*START.ONLYTEST*/
             colors.disable();
+            /*END.ONLYTEST*/
         }
     }
     warn(...info: any[]) {
         if (this.logLevel <= LogLevel.Warnning) {
+            /*START.ONLYTEST*/
             colors.enable();
-            this.logChannel.warn("[warn]".yellow, ...info);
+            /*END.ONLYTEST*/
+            this.logChannel.warn("[warn]"/*START.ONLYTEST*/.yellow/*END.ONLYTEST*/, ...info);
+            /*START.ONLYTEST*/
             colors.disable();
+            /*END.ONLYTEST*/
+
         }
     }
     error(...info: any[]) {
         if (this.logLevel <= LogLevel.Error) {
+            /*START.ONLYTEST*/
             colors.enable();
-            this.logChannel.error("[error]".red, ...info);
+            /*END.ONLYTEST*/
+            this.logChannel.error("[error]"/*START.ONLYTEST*/.red/*END.ONLYTEST*/, ...info);
+            /*START.ONLYTEST*/
             colors.disable();
+            /*END.ONLYTEST*/
         }
     }
     logTo(logChannel: LogChannel) {
@@ -53,5 +68,10 @@ class NullLogChannel {
 }
 export const nullLogChannel = new NullLogChannel();
 
-// TODO! logLevel 从打包工具中的参数去取 生产模式下设置为Error 
-export default new Logger(LogLevel.Normal)
+let logLevel_init = LogLevel.Normal
+var __env__ = "";
+switch (__env__) {
+    case "prod":
+        logLevel_init = LogLevel.Error
+}
+export default new Logger(logLevel_init)

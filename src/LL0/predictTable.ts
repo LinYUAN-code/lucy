@@ -1,11 +1,12 @@
 import { getDerivationFirstSet } from "@/firstSet";
 import Lexer from "@/lexer";
+import { transferString2Grammers } from "@/utils";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
 
 export default function generatorPredictTable(
   lexer: Lexer,
-  grammers: Grammers,
+  inGrammers: Array<string>,
   firstSet: GrammerSet,
   followSet: GrammerSet,
 ): PredictTable {
@@ -14,6 +15,7 @@ export default function generatorPredictTable(
       (1)对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = “A -> u” ；
       (2)若 First(u) 含 ε ，则对 Follow(A) 中的所有符号 a （可含 $ ），置 M[A, a] = “A -> u” 
   */
+  const grammers = transferString2Grammers(lexer, inGrammers);
   const predictTable: PredictTable = [];
   const nonTerminal2TableRowMap = new Map<NonTerminal, PredictLine>();
   lexer.nonTerminals.forEach(nonTerminal => {

@@ -16,7 +16,6 @@ test("first set test", () => {
     try {
         while (true) {
             const tocken = lexer.pop();
-            console.log(tocken, lexer.remainString());
             if (tocken.tocken === EndingCharacter) break;
         }
     } catch (e) {

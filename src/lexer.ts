@@ -1,4 +1,5 @@
 import { safeRegCharacter } from "./utils";
+import { EndingCharacter } from "./utils/const";
 import log from "./utils/log";
 
 export default class Lexer {
@@ -14,19 +15,43 @@ export default class Lexer {
   }
   public setSource(source: string) {
     this.source = source;
-    this.currentColumn = 0;
+    this.currentLine = 0;
     this.currentColumn = 0;
   }
+  public remainString(): string {
+    return this.source.slice(this.currentColumn);
+  }
   public next(): Tocken {
-    return {
-      tockenType: "1",
-      origin: "1",
-    };
+    if (this.currentColumn === this.source.length) {
+      return {
+        tocken: EndingCharacter,
+        origin: EndingCharacter
+      };
+    }
+    for (let terminal of this.terminals) {
+      const matchResult = this.source.slice(this.currentColumn).match(terminal[1]);
+      if (matchResult) {
+        return {
+          tocken: terminal[0],
+          origin: matchResult[0]
+        }
+      }
+    }
+    throw new Error(`[lexer next]: match next Terminal error \n sourecInput: ${this.source}\n remainString: ${this.source.slice(this.currentColumn)}`);
+  }
+  public pop(): Tocken {
+    try {
+      const tocken: Tocken = this.next();
+      this.currentColumn += tocken.origin.length;
+      return tocken;
+    } catch (e) {
+      throw e;
+    }
   }
   public isTerminal(str: string) {
     let isTerminal = true;
     this.nonTerminals.some(v => {
-      if (v[0] === str) {
+      if (v === str) {
         isTerminal = false;
         return true;
       }

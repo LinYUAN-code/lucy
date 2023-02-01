@@ -46,10 +46,12 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
     while (true) {
         let hasChange = false;
         /* 
-            如果叉是一个非终结符号，且8一子上⋯！是一个产生式，其中么三1，那么如果对于某个i,a在FIRST(Y.)中且e在所有的 FIRST(F)、FIRST（Y2）、•、FIRSTC¥.-1)中，就把。加人到
-            FIRST(X)中。也就是说，V⋯V;一1三E。如果对于所有的j=1，2，⋯，后，E在FIRST（¥)中，那么将e加人到 FIRST(X)中。比如，FIRST（¥）中的所有符号一定在FIRST(8)中。
-            如果丫，不能推导出e，那么我们就不会再向FIRST(X)中加人任何符号，但是期果上，三e，那么我们就加上
-            FIRST（Y2），依此类推。 
+            A => B0B1B2B3
+            i = 0
+            FIRST(Bi) - EmptyCharacter 加入到 FIRST(A)中
+            如果FIRST(B1)不含有EmptyCharacter退出循环
+            
+            若B0-B3均含有EmptyCharacter 将EmptyCharacter加入到FIRST(A)中
         */
         firstSet.forEach(setLine => {
             if (setLine.isTerminal) return;

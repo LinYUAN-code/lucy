@@ -2,8 +2,8 @@ import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
 import log, { nullLogChannel } from "@/utils/log";
-import { EmptyCharacter } from "@/utils/const";
-import generatorPredictTable, { checkPredickTableIsValid } from "@/LL0/predictTable";
+import { EmptyCharacter, EndingCharacter } from "@/utils/const";
+import generatorPredictTable, { checkPredickTableIsValid, predict } from "@/LL0/predictTable";
 import { transferString2Grammers } from "@/utils";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
@@ -18,10 +18,10 @@ const testCases: Array<{
                 "A", "B'", "B", "C", "S"
             ],
             terminalsSet: [
-                ["ε", /ε/],
-                ["a", /a/],
-                ["b", /b/],
-                ["c", /c/]
+                [EmptyCharacter, /^ε/],
+                ["a", /^a/],
+                ["b", /^b/],
+                ["c", /^c/]
             ],
             grammers: [
                 "S  =>  AB",
@@ -80,12 +80,12 @@ const testCases: Array<{
                 "E'", "E", "T'", "T", "F"
             ],
             terminalsSet: [
-                [EmptyCharacter, /ε/],
-                ["int", /123/],
-                ["+", /\+/],
-                ["*", /\*/],
-                ["(", /\(/],
-                [")", /\)/],
+                [EmptyCharacter, /^ε/],
+                ["int", /^(0|[1-9][0-9]*)/],
+                ["+", /^\+/],
+                ["*", /^\*/],
+                ["(", /^\(/],
+                [")", /^\)/],
             ],
             grammers: [
                 "E  =>  T E'",
@@ -213,14 +213,16 @@ test("first set test", () => {
         log.log("[followSet]", followSet, testCase.followSetAnswer);
         expect(followSet).toEqual(testCase.followSetAnswer);
         if (testCase.predictTable) {
-            log.logTo(console);
             const predictTable = generatorPredictTable(lexer, transferString2Grammers(lexer, testCase.grammers), firstSet, followSet);
             expect(checkPredickTableIsValid(lexer, predictTable)).toBe(true);
-            for (let tableLine of predictTable) {
-                tableLine.terminal2Derivation = Object.fromEntries(tableLine.terminal2Derivation as Map<Terminal, Grammer>);
+            for (let tableLine of testCase.predictTable) {
+                tableLine.terminal2Derivation = new Map(Object.entries(tableLine.terminal2Derivation));
             }
             log.log(predictTable, "\n------------------\n", testCase.predictTable);
             expect(predictTable).toEqual(testCase.predictTable);
+
+            const predictResult = predict(lexer, predictTable, "11 + 22 * 33", "E");
+            log.log(predictResult);
         }
     }
 

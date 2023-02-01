@@ -4,7 +4,7 @@ type Position = {
   column: number;
 };
 type Tocken = {
-  tockenType: TockenType;
+  tocken: Terminal;
   origin: string;
   position?: Position;
   Options?: Array<any>;
@@ -28,3 +28,9 @@ type PredictLine = {
   terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;
 };
 type PredictTable = Array<PredictLine>;
+
+type PredictProcessLine = {
+  parseStack: Array<Terminal | NonTerminal>,
+  remainingInput: string,
+  parseAction: string,
+}

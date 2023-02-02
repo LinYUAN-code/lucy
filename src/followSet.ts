@@ -9,6 +9,8 @@ export default function generateFllowSet(lexer: Lexer, inGrammers: Array<string>
     log.log("[generateFllowSet start]");
     if (!firstSet) {
         firstSet = generateFirstSet(lexer, inGrammers);
+    } else {
+        firstSet = Array.from(firstSet);
     }
     const grammers = transferString2Grammers(lexer, inGrammers);
     log.log("[grammers after transferString2Grammers]", grammers);

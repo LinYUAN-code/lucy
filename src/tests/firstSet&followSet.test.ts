@@ -3,9 +3,9 @@ import Lexer from "@/lexer";
 import generateFirstSet from "@/firstSet";
 import log, { nullLogChannel } from "@/utils/log";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
-import generatorPredictTable, { checkPredickTableIsValid, predict } from "@/LL0/predictTable";
+import generatorPredictTable, { checkPredickTableIsValid, predict } from "@/LL1/predictTable";
 import { transferString2Grammers } from "@/utils";
-import LL0Parser from "@/LL0/parser";
+import LL1Parser from "@/LL1/parser";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
     terminalsSet: Array<[string, RegExp]>,
@@ -188,7 +188,7 @@ test("first set test", () => {
     log.logTo(nullLogChannel);
     for (let i = 0; i < testCases.length; i++) {
         const testCase = testCases[i];
-        const ll0Parser = new LL0Parser(testCase.terminalsSet, testCase.nonTerminalSymbol, testCase.grammers);
+        const ll1Parser = new LL1Parser(testCase.terminalsSet, testCase.nonTerminalSymbol, testCase.grammers);
         [testCase.firstSetAnswer, testCase.followSetAnswer].forEach(grammerSet => {
             grammerSet.sort((a, b) => {
                 if (a.tocken < b.tocken) {
@@ -207,22 +207,22 @@ test("first set test", () => {
                 }))
             })
         })
-        const firstSet = ll0Parser.getFirstSet();
+        const firstSet = ll1Parser.getFirstSet();
         log.log("[firstSet]", firstSet, testCase.firstSetAnswer);
         expect(firstSet).toEqual(testCase.firstSetAnswer);
-        const followSet = ll0Parser.getFollowSet(firstSet);
+        const followSet = ll1Parser.getFollowSet(firstSet);
         log.log("[followSet]", followSet, testCase.followSetAnswer);
         expect(followSet).toEqual(testCase.followSetAnswer);
         if (testCase.predictTable) {
-            const predictTable = ll0Parser.getPredictTable(firstSet, followSet);
-            expect(ll0Parser.checkPredickTableIsValid(predictTable)).toBe(true);
+            const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+            expect(ll1Parser.checkPredickTableIsValid(predictTable)).toBe(true);
             for (let tableLine of testCase.predictTable) {
                 tableLine.terminal2Derivation = new Map(Object.entries(tableLine.terminal2Derivation));
             }
             log.log(predictTable, "\n------------------\n", testCase.predictTable);
             expect(predictTable).toEqual(testCase.predictTable);
             // log.logTo(console);
-            const predictResult = ll0Parser.getPredictProcess("11 + 22 * 33", "E", predictTable);
+            const predictResult = ll1Parser.getPredictProcess("11 + 22 * 33", "E", predictTable);
             log.log(predictResult);
         }
     }

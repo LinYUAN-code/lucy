@@ -3,7 +3,7 @@ import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import generatorPredictTable, { checkPredickTableIsValid, predict } from "./predictTable";
 
-export default class LL0Parser {
+export default class LL1Parser {
   public lexer: Lexer;
   public textGrammers: Array<string>;
   constructor(terminals: Array<[string, RegExp]>, nonTerminals: Array<string>, inGrammers: Array<string>) {

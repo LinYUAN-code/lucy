@@ -7,6 +7,7 @@
     <title>Document</title>
   </head>
   <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script>
+  <!-- <script src="../dist/index.iife.js"></script> -->
   <script>
     const testCase = {
       nonTerminalSymbol: ["E'", "E", "T'", "T", "F"],
@@ -26,16 +27,15 @@
         "F  => ( E ) | int",
       ],
     };
-    console.log(lucy);
-    const ll0Parser = new lucy.LL0Parser(
+    const ll1Parser = new lucy.LL1Parser(
       testCase.terminalsSet,
       testCase.nonTerminalSymbol,
       testCase.grammers
     );
-    const firstSet = ll0Parser.getFirstSet();
-    const followSet = ll0Parser.getFollowSet(firstSet);
-    const predictTable = ll0Parser.getPredictTable(firstSet, followSet);
-    const predictResult = ll0Parser.getPredictProcess(
+    const firstSet = ll1Parser.getFirstSet();
+    const followSet = ll1Parser.getFollowSet(firstSet);
+    const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+    const predictResult = ll1Parser.getPredictProcess(
       "11 + 22 * 33",
       "E",
       predictTable
@@ -44,6 +44,24 @@
     console.log(followSet);
     console.log(predictTable);
     console.log(predictResult);
+    {
+      const grammers = [
+        "S  =>  AB",
+        "A  =>  Ca | ε",
+        "B  =>  cB'",
+        "B' =>  aACB' | ε",
+        "C  =>  b | ε",
+      ];
+      const { nonTerminals, terminals } =
+        lucy.getTockFromSimpleGrammers(grammers);
+      const ll1Parser = new lucy.LL1Parser(terminals, nonTerminals, grammers);
+      const firstSet = ll1Parser.getFirstSet();
+      const followSet = ll1Parser.getFollowSet(firstSet);
+      const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+      console.log(firstSet);
+      console.log(followSet);
+      console.log(predictTable);
+    }
   </script>
   <body>
     Lucy Demo

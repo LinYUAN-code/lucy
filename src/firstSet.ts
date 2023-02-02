@@ -1,5 +1,5 @@
 import Lexer from "./lexer";
-import { isSetIncludes, transferString2Grammers } from "./utils"
+import { transferString2Grammers } from "./utils"
 import { EmptyCharacter } from "./utils/const";
 import log from "./utils/log";
 

@@ -18,6 +18,15 @@ open https://linyuan-code.github.io/lucy/demo/index.html in browser and open deb
 ### LL(1)
 
 ```javascript
+let grammers = [
+  ...
+];
+grammers = unionGrammers(grammers);
+grammers = liftUpCommonTocken(grammers);
+grammers = clearRightRecursion(grammers);
+```
+
+```javascript
 const testCase = {
   nonTerminals: ["E'", "E", "T'", "T", "F"],
   terminals: [
@@ -52,7 +61,7 @@ const predictResult = ll1Parser.getPredictProcess(
 ```
 
 如果你的文法是教学意义的简单文法，如下格式
-非终结符: A B .... A' B'
+非终结符: A B .... A' B' A'' A''' ...
 终结符: 小写字母 以及 Greek Symbols () a b c ε μ ....
 那么只需要输入文法串即可自动获得对应的 noTerminals 和 terminals 集合
 

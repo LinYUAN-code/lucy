@@ -69,6 +69,16 @@ const ll1Parser = new LL1Parser(terminals, nonTerminals, grammers);
 const firstSet = ll1Parser.getFirstSet();
 const followSet = ll1Parser.getFollowSet(firstSet);
 const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+// 按步骤生成
+for (let process of ll1Parser.getFirstSetProgressive()) {
+  console.log(process);
+}
+for (let process of ll1Parser.getFollowSetProgressive(firstSet)) {
+  console.log(process);
+}
+for (let process of ll1Parser.getPredictTableProgressive(firstSet, followSet)) {
+  console.log(process);
+}
 ```
 
 ### LR(1)

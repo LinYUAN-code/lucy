@@ -35,3 +35,9 @@ type PredictProcessLine = {
   parseAction: string,
 }
 
+
+type Rule = Array<string>;
+type Process<T> = {
+  ruleIndex: number;
+  result: T;
+}

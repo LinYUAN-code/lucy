@@ -44,6 +44,19 @@
     console.log(followSet);
     console.log(predictTable);
     console.log(predictResult);
+    // 按步骤生成
+    for (let process of ll1Parser.getFirstSetProgressive()) {
+      console.log(process);
+    }
+    for (let process of ll1Parser.getFollowSetProgressive(firstSet)) {
+      console.log(process);
+    }
+    for (let process of ll1Parser.getPredictTableProgressive(
+      firstSet,
+      followSet
+    )) {
+      console.log(process);
+    }
     {
       const grammers = [
         "S  =>  AB",

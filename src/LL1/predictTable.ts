@@ -143,3 +143,82 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
   }
   return predictProcess;
 }
+
+
+export function* generatePredictTableProgressive(
+  lexer: Lexer,
+  inGrammers: Array<string>,
+  firstSet: GrammerSet,
+  followSet: GrammerSet,
+): IterableIterator<Rule | Process<PredictTable>> {
+  /*
+    对语法中的每条产生式： A -> u ：
+      (1)对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = A -> u
+      (2)若 First(u) 含 ε ，则对 Follow(A) 中的所有符号 a （可含 $ ），置 M[A, a] = A -> u
+  */
+  yield [
+    "1. 对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = A -> u",
+    "2. 若 First(u) 含 ε ，则对 Follow(A) 中的所有符号 a （可含 $ ），置 M[A, a] = A -> u"
+  ]
+  const grammers = transferString2Grammers(lexer, inGrammers);
+  const predictTable: PredictTable = [];
+  const nonTerminal2TableRowMap = new Map<NonTerminal, PredictLine>();
+  lexer.nonTerminals.forEach(nonTerminal => {
+    const tableLine = {
+      nonTerminal: nonTerminal,
+      terminal2Derivation: new Map<Terminal, Grammer>(),
+    };
+    nonTerminal2TableRowMap.set(nonTerminal, tableLine);
+    predictTable.push(tableLine);
+  })
+  const nonTerminal2FirstSetMap = new Map<NonTerminal, GrammerSetLine>();
+  const nonTerminal2FollowSetLine = new Map<NonTerminal, GrammerSetLine>();
+  for (let setLine of followSet) {
+    nonTerminal2FollowSetLine.set(setLine.tocken, setLine);
+  }
+  for (let setLine of firstSet) {
+    nonTerminal2FirstSetMap.set(setLine.tocken, setLine);
+  }
+  for (let grammer of grammers) {
+    for (let derivation of grammer.derivations) {
+      const derivationFirstSet = getDerivationFirstSet(lexer, derivation, nonTerminal2FirstSetMap);
+      const tableLine = nonTerminal2TableRowMap.get(grammer.nonTerminal);
+      log.log(derivationFirstSet);
+      // (1)对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = “A -> u” ；
+      for (let terminal of derivationFirstSet.terminals) {
+        if (terminal === EmptyCharacter) continue;
+        let cellGrammer: Grammer | undefined = tableLine?.terminal2Derivation.get(terminal);
+        if (!cellGrammer) {
+          cellGrammer = {
+            nonTerminal: grammer.nonTerminal,
+            derivations: []
+          };
+          tableLine?.terminal2Derivation.set(terminal, cellGrammer);
+        }
+        cellGrammer.derivations.push(derivation);
+        yield {
+          ruleIndex: 0,
+          result: predictTable
+        }
+      }
+      // (2)若 First(u) 含 ε ，则对 Follow(A) 中的所有符号 a （可含 $ ），置 M[A, a] = “A -> u” 
+      if (derivationFirstSet.terminals.has(EmptyCharacter)) {
+        for (let terminal of nonTerminal2FollowSetLine.get(grammer.nonTerminal)!.terminals) {
+          let cellGrammer: Grammer | undefined = tableLine?.terminal2Derivation.get(terminal);
+          if (!cellGrammer) {
+            cellGrammer = {
+              nonTerminal: grammer.nonTerminal,
+              derivations: []
+            };
+            tableLine?.terminal2Derivation.set(terminal, cellGrammer);
+          }
+          cellGrammer.derivations.push(derivation);
+          yield {
+            ruleIndex: 1,
+            result: predictTable
+          }
+        }
+      }
+    }
+  }
+}

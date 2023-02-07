@@ -10,8 +10,8 @@ export default class Lexer {
   source: string = "";
   constructor(terminals: Array<[string, RegExp]>, nonTerminals: Array<string>) {
     // 输入所有的终结符号集合
-    this.nonTerminals = nonTerminals;
-    this.terminals = terminals;
+    this.nonTerminals = [...nonTerminals];
+    this.terminals = [...terminals];
   }
   public setSource(source: string) {
     this.source = source;

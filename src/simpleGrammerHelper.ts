@@ -90,7 +90,7 @@ export function unionGrammers(grammers: Array<string>): Array<string> {
     A => BA'
     A' => a | b 
 */
-export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>,): Array<string> {
+export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string> {
     let result: Array<string> = grammers;
     if (!nonTerminals || !terminals) {
         const tockenAnaRes = getTockFromSimpleGrammers(grammers);
@@ -144,9 +144,34 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
 /*
     消除左递归 TODO!
     直接左递归-间接左递归
+    要求： 输入文法不含有EmptyCharater 和 环
 */
-export function clearRightRecursion(grammers: Array<string>): Array<string> {
+export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string> {
     const result: Array<string> = [];
+    if (!nonTerminals || !terminals) {
+        const tockenAnaRes = getTockFromSimpleGrammers(grammers);
+        nonTerminals = tockenAnaRes.nonTerminals;
+        terminals = tockenAnaRes.terminals;
+    }
+    const nonTerminals2DerivationMap = new Map<NonTerminal, string[]>();
+    for (let grammer of grammers) {
+        grammer = grammer.replaceAll(/\s/g, "");
+        const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
+        const nonTerminal = arr[0];
+        const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+            return lexer.splitDerivation(derivation);
+        });
+        nonTerminals2DerivationMap.set(nonTerminal, derivations);
+    }
+    let lexer = new Lexer(terminals, nonTerminals);
+    for (let i = 0; i < nonTerminals.length; i++) {
+        // 替换产生式
+        for (let j = 0; j < i; j++) {
+
+        }
+        // 消除左递归
+    }
+
     return result;
 }
 

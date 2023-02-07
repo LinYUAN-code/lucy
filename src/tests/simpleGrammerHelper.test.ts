@@ -1,4 +1,5 @@
-import { getTockFromSimpleGrammers } from "@/simpleGrammerHelper"
+import { getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers } from "@/simpleGrammerHelper"
+import log, { nullLogChannel } from "@/utils/log";
 import { LL1Parser } from "..";
 
 
@@ -16,4 +17,19 @@ test("first set test", () => {
     const firstSet = ll1Parser.getFirstSet();
     const followSet = ll1Parser.getFollowSet(firstSet);
     const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+})
+
+test("simple set test", () => {
+    let grammers = [
+        "S  =>  AB",
+        "S  =>  Ca | ε",
+        "S =>  AACB' | AAdd",
+        "C  =>  b",
+        "C => ε"
+    ]
+    log.logTo(nullLogChannel);
+    grammers = unionGrammers(grammers);
+    console.log(grammers);
+    grammers = liftUpCommonTocken(grammers);
+    console.log(grammers);
 })

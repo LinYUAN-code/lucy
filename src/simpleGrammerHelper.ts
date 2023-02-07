@@ -1,3 +1,4 @@
+import Lexer from "./lexer";
 import log from "./utils/log";
 
 /*
@@ -56,14 +57,17 @@ export function getTockFromSimpleGrammers(inGrammers: Array<string>): {
     A -> c
     ===>
     A -> a | c
+
+    并且会简单去重
 */
 export function unionGrammers(grammers: Array<string>): Array<string> {
     let unionMap = new Map<string, Array<string>>();
     const result: Array<string> = [];
     grammers.forEach(grammer => {
+        grammer = grammer.replaceAll(/\s/g, "");
         const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
         const nonTerminal = arr[0];
-        const derivation = arr[0];
+        const derivation = arr[1];
         if (unionMap.has(nonTerminal)) {
             const derivations = unionMap.get(nonTerminal);
             derivations?.push(derivation);
@@ -73,7 +77,8 @@ export function unionGrammers(grammers: Array<string>): Array<string> {
         }
     })
     for (let nonTerminal of unionMap.keys()) {
-        result.push(`${nonTerminal} => ${unionMap.get(nonTerminal)?.join(" | ")}`);
+        const derivations = [...new Set(unionMap.get(nonTerminal)!)];
+        result.push(`${nonTerminal} => ${derivations.join("|")}`.split("|").join(" | "));
     }
     log.log(result);
     return result;
@@ -81,9 +86,58 @@ export function unionGrammers(grammers: Array<string>): Array<string> {
 
 /*
     提左公共因子 TODO! 
+    A => Ba | Bb 
+    A => BA'
+    A' => a | b 
 */
-export function liftUpCommonTocken(grammers: Array<string>): Array<string> {
-    const result: Array<string> = [];
+export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>,): Array<string> {
+    let result: Array<string> = grammers;
+    if (!nonTerminals || !terminals) {
+        const tockenAnaRes = getTockFromSimpleGrammers(grammers);
+        nonTerminals = tockenAnaRes.nonTerminals;
+        terminals = tockenAnaRes.terminals;
+    }
+    let lexer = new Lexer(terminals, nonTerminals);
+    while (true) {
+        let newAddGrammers: string[] = [];
+        const tmpResult = result.map(grammer => {
+            grammer = grammer.replaceAll(/\s/g, "");
+            const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
+            const nonTerminal = arr[0];
+            const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+                return lexer.splitDerivation(derivation);
+            })
+            const newDerivation = [];
+            const firstTocken2DerivationsMap = new Map<NonTerminal | Terminal, string[][]>();
+            derivations.forEach(derivation => {
+                let arr = firstTocken2DerivationsMap.get(derivation[0]);
+                if (!arr) {
+                    arr = [derivation.slice(1)];
+                } else {
+                    arr.push(derivation.slice(1));
+                }
+                firstTocken2DerivationsMap.set(derivation[0], arr);
+            })
+            for (let tocken of firstTocken2DerivationsMap.keys()) {
+                if (firstTocken2DerivationsMap.get(tocken)?.length === 1) {
+                    newDerivation.push(tocken + firstTocken2DerivationsMap.get(tocken)![0]);
+                    continue;
+                }
+                const derivations = firstTocken2DerivationsMap.get(tocken);
+                // 可以提取公因子
+                const newUnTerminal = lexer.getNewNonTerminal(nonTerminal);
+                newDerivation.push(tocken + newUnTerminal);
+                newAddGrammers.push(newUnTerminal + " => " + derivations?.map(v => v.join("")).join(" | "));
+            }
+            return nonTerminal + " => " + newDerivation.join(" | ");
+        });
+        const newResult = [...tmpResult, ...newAddGrammers];
+        console.log("[com]", result, newResult);
+        if (result.length === newResult.length) {
+            break;
+        }
+        result = newResult;
+    }
     return result;
 }
 

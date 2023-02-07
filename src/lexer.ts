@@ -62,6 +62,8 @@ export default class Lexer {
   // 切割推导式
   public splitDerivation(str: string): Array<NonTerminal | Terminal> {
     const terminals: string[] = [];
+    let countTime = 0;
+    const MAX_EXCUTE = 50000;
     while (str.length) {
       for (let nonTerminal of this.nonTerminals) {
         const matchResult = str.match(new RegExp("^" + nonTerminal))
@@ -77,8 +79,25 @@ export default class Lexer {
           str = str.slice(matchResult[0].length);
         }
       }
+      countTime++;
+      if (countTime > MAX_EXCUTE) {
+        throw new Error(`[splitDerivation] error: excute over MAX_EXCUTE remaining str: ${str}`);
+      }
     }
     log.log(terminals);
     return terminals;
+  }
+  /*
+    生成提公因子 以及 消除左递归使用的非终结符
+  */
+  public getNewNonTerminal(nonTerminal: string): string {
+    let tmp = nonTerminal;
+    while (true) {
+      tmp += "'";
+      if (this.nonTerminals.indexOf(tmp) === -1) {
+        this.nonTerminals.unshift(tmp);
+        return tmp;
+      }
+    }
   }
 }

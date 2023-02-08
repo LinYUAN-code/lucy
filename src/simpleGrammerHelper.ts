@@ -1,4 +1,5 @@
 import Lexer from "./lexer";
+import { EmptyCharacter } from "./utils/const";
 import log from "./utils/log";
 
 /*
@@ -105,6 +106,7 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
             const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
             const nonTerminal = arr[0];
             const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+                log.log("[debug]", result);
                 return lexer.splitDerivation(derivation);
             })
             const newDerivation = [];
@@ -120,7 +122,7 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
             })
             for (let tocken of firstTocken2DerivationsMap.keys()) {
                 if (firstTocken2DerivationsMap.get(tocken)?.length === 1) {
-                    newDerivation.push(tocken + firstTocken2DerivationsMap.get(tocken)![0]);
+                    newDerivation.push(tocken + firstTocken2DerivationsMap.get(tocken)![0].join(""));
                     continue;
                 }
                 const derivations = firstTocken2DerivationsMap.get(tocken);
@@ -131,8 +133,9 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
             }
             return nonTerminal + " => " + newDerivation.join(" | ");
         });
+        log.log("[pre]", tmpResult, newAddGrammers);
         const newResult = [...tmpResult, ...newAddGrammers];
-        console.log("[com]", result, newResult);
+        log.log("[com]", result, newResult);
         if (result.length === newResult.length) {
             break;
         }
@@ -153,6 +156,9 @@ export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Arra
         nonTerminals = tockenAnaRes.nonTerminals;
         terminals = tockenAnaRes.terminals;
     }
+    log.log("[nonTerminals]", nonTerminals);
+    log.log("[terminals]", terminals);
+    let lexer = new Lexer(terminals, nonTerminals);
     const nonTerminals2DerivationMap = new Map<NonTerminal, string[][]>();
     for (let grammer of grammers) {
         grammer = grammer.replaceAll(/\s/g, "");
@@ -163,15 +169,59 @@ export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Arra
         });
         nonTerminals2DerivationMap.set(nonTerminal, derivations);
     }
-    let lexer = new Lexer(terminals, nonTerminals);
+    log.log("[nonTerminals2DerivationMap]", nonTerminals2DerivationMap);
     for (let i = 0; i < nonTerminals.length; i++) {
+        const gI = nonTerminals2DerivationMap.get(nonTerminals[i]);
         // 替换产生式
         for (let j = 0; j < i; j++) {
-
+            const gJ = nonTerminals2DerivationMap.get(nonTerminals[j]);
+            for (let k = gI!.length - 1; k >= 0; k--) {
+                const grammer = gI![k];
+                if (grammer[0] === nonTerminals[j]) {
+                    // replace
+                    log.log(grammer, nonTerminals[j]);
+                    for (let jgrammer of gJ!) {
+                        log.log("[-]", jgrammer);
+                        gI?.push([...jgrammer, ...grammer.slice(1)]);
+                    }
+                    gI?.splice(k, 1);
+                }
+            }
         }
+        const needHandleIndex: number[] = [];
         // 消除左递归
-    }
+        for (let j = gI!.length - 1; j >= 0; j--) {
+            const grammer = gI![j];
+            if (grammer[0] === nonTerminals[i]) {
+                // 存在左递归
+                needHandleIndex.push(j);
+            }
+        }
+        if (needHandleIndex.length) {
+            const newNonTerminalTocken = lexer.getNewNonTerminal(nonTerminals[i]);
+            const newGrammers: string[][] = [];
+            const newNonTerminalGrammers: string[][] = [];
 
+            for (let j = gI!.length - 1; j >= 0; j--) {
+                if (needHandleIndex.indexOf(j) !== -1) continue;
+                // EmptyCharacter作为首个符号 没有意义
+                newGrammers.push([...(gI![j][0] === EmptyCharacter ? gI![j].slice(1) : gI![j]), newNonTerminalTocken]);
+            }
+            for (let index of needHandleIndex) {
+                newNonTerminalGrammers.push([...gI![index].slice(1), newNonTerminalTocken])
+            }
+            newNonTerminalGrammers.push([EmptyCharacter]);
+            nonTerminals2DerivationMap.set(nonTerminals[i], [...newGrammers, ...(needHandleIndex.length ? [] : gI!)]);
+            nonTerminals2DerivationMap.set(newNonTerminalTocken, newNonTerminalGrammers);
+        }
+        log.log("[nonTerminals2DerivationMap in process]", nonTerminals2DerivationMap, gI);
+    }
+    for (let nonTerminal of nonTerminals2DerivationMap.keys()) {
+        const derivation: string = nonTerminals2DerivationMap.get(nonTerminal)!.map(derivation => {
+            return derivation.join("");
+        }).join(" | ");
+        result.push(`${nonTerminal} => ${derivation}`);
+    }
     return result;
 }
 

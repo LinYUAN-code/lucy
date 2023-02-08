@@ -64,12 +64,14 @@ export default class Lexer {
     const terminals: string[] = [];
     let countTime = 0;
     const MAX_EXCUTE = 50000;
+    const inStr = str;
     while (str.length) {
       for (let nonTerminal of this.nonTerminals) {
         const matchResult = str.match(new RegExp("^" + nonTerminal))
         if (matchResult) {
           terminals.push(nonTerminal);
           str = str.slice(matchResult[0].length);
+          break;
         }
       }
       for (let terminal of this.terminals) {
@@ -77,14 +79,14 @@ export default class Lexer {
         if (matchResult) {
           terminals.push(terminal[0]);
           str = str.slice(matchResult[0].length);
+          break;
         }
       }
       countTime++;
       if (countTime > MAX_EXCUTE) {
-        throw new Error(`[splitDerivation] error: excute over MAX_EXCUTE remaining str: ${str}`);
+        throw new Error(`[splitDerivation] error: excute over MAX_EXCUTE str: ${inStr}  remaining str: ${str} `);
       }
     }
-    log.log(terminals);
     return terminals;
   }
   /*

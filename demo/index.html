@@ -75,6 +75,27 @@
       console.log(followSet);
       console.log(predictTable);
     }
+    {
+      let grammers = [
+        "S  =>  AB",
+        "S  =>  SCa | h",
+        "S =>  AACB | AAdd",
+        "C  =>  b",
+        "C => l",
+        "A => a",
+        "B => b",
+        "C => c",
+      ];
+      // 合并(A => a , A => b   === A => a | b),并简单去重
+      grammers = lucy.unionGrammers(grammers);
+      console.log(grammers);
+      // 提左公因子
+      grammers = lucy.liftUpCommonTocken(grammers);
+      console.log(grammers);
+      // 消除左递归
+      grammers = lucy.clearRightRecursion(grammers);
+      console.log(grammers);
+    }
   </script>
   <body>
     Lucy Demo

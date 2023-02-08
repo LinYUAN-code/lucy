@@ -1,4 +1,4 @@
-import { getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers } from "@/simpleGrammerHelper"
+import { clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers } from "@/simpleGrammerHelper"
 import log, { nullLogChannel } from "@/utils/log";
 import { LL1Parser } from "..";
 
@@ -11,8 +11,9 @@ test("first set test", () => {
         "B' =>  aACB' | ε",
         "C  =>  b | ε"
     ]
+    log.logTo(nullLogChannel);
     const { nonTerminals, terminals } = getTockFromSimpleGrammers(grammers);
-    console.log(nonTerminals, terminals);
+    log.log(nonTerminals, terminals);
     const ll1Parser = new LL1Parser(terminals, nonTerminals, grammers);
     const firstSet = ll1Parser.getFirstSet();
     const followSet = ll1Parser.getFollowSet(firstSet);
@@ -22,14 +23,33 @@ test("first set test", () => {
 test("simple set test", () => {
     let grammers = [
         "S  =>  AB",
-        "S  =>  Ca | ε",
-        "S =>  AACB' | AAdd",
+        "S  =>  SCa | h",
+        "S =>  AACB | AAdd",
         "C  =>  b",
-        "C => ε"
+        "C => l",
+        "A => a",
+        "B => b",
+        "C => c",
     ]
     log.logTo(nullLogChannel);
     grammers = unionGrammers(grammers);
-    console.log(grammers);
+    log.log(grammers);
     grammers = liftUpCommonTocken(grammers);
-    console.log(grammers);
+    log.log(grammers);
+    grammers = clearRightRecursion(grammers);
+    log.log(grammers);
+})
+
+test("clearRightRecursion test", () => {
+    let grammers = [
+        "S  =>  Aa | b",
+        "A => Ac | Sd | ε",
+    ]
+    log.logTo(nullLogChannel);
+    grammers = unionGrammers(grammers);
+    log.log(grammers);
+    grammers = liftUpCommonTocken(grammers);
+    log.log(grammers);
+    grammers = clearRightRecursion(grammers);
+    log.log(grammers);
 })

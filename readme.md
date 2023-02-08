@@ -19,11 +19,21 @@ open https://linyuan-code.github.io/lucy/demo/index.html in browser and open deb
 
 ```javascript
 let grammers = [
-  ...
+  "S  =>  AB",
+  "S  =>  SCa | h",
+  "S =>  AACB | AAdd",
+  "C  =>  b",
+  "C => l",
+  "A => a",
+  "B => b",
+  "C => c",
 ];
-grammers = unionGrammers(grammers);
-grammers = liftUpCommonTocken(grammers);
-grammers = clearRightRecursion(grammers);
+// 合并(A => a , A => b   === A => a | b),并简单去重
+grammers = lucy.unionGrammers(grammers);
+// 提左公因子
+grammers = lucy.liftUpCommonTocken(grammers);
+// 消除左递归
+grammers = lucy.clearRightRecursion(grammers);
 ```
 
 ```javascript
@@ -45,7 +55,7 @@ const testCase = {
     "F  => ( E ) | int",
   ],
 };
-const ll1Parser = new LL1Parser(
+const ll1Parser = new lucy.LL1Parser(
   testCase.terminals,
   testCase.nonTerminals,
   testCase.grammers
@@ -73,8 +83,8 @@ const grammers = [
   "B' =>  aACB' | ε",
   "C  =>  b | ε",
 ];
-const { nonTerminals, terminals } = getTockFromSimpleGrammers(grammers);
-const ll1Parser = new LL1Parser(terminals, nonTerminals, grammers);
+const { nonTerminals, terminals } = lucy.getTockFromSimpleGrammers(grammers);
+const ll1Parser = new lucy.LL1Parser(terminals, nonTerminals, grammers);
 const firstSet = ll1Parser.getFirstSet();
 const followSet = ll1Parser.getFollowSet(firstSet);
 const predictTable = ll1Parser.getPredictTable(firstSet, followSet);

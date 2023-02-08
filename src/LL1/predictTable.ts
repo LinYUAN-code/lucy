@@ -1,5 +1,6 @@
 import { getDerivationFirstSet } from "@/firstSet";
 import Lexer from "@/lexer";
+import { Grammer, GrammerSet, GrammerSetLine, NonTerminal, PredictLine, PredictProcessLine, PredictTable, Process, Rule, Terminal } from "@/types/type";
 import { transferString2Grammers } from "@/utils";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";

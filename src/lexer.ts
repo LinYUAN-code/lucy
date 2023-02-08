@@ -1,3 +1,4 @@
+import { NonTerminal, Terminal, Tocken } from "./types/type";
 import { safeRegCharacter } from "./utils";
 import { EndingCharacter } from "./utils/const";
 import log from "./utils/log";

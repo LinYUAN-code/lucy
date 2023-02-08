@@ -1,4 +1,5 @@
 import Lexer from "./lexer";
+import { NonTerminal, Terminal } from "./types/type";
 import { EmptyCharacter } from "./utils/const";
 import log from "./utils/log";
 

@@ -1,4 +1,5 @@
 import Lexer from "./lexer";
+import { GrammerSet, GrammerSetLine, NonTerminal, Process, Rule, Terminal } from "./types/type";
 import { transferString2Grammers } from "./utils"
 import { EmptyCharacter } from "./utils/const";
 import log from "./utils/log";

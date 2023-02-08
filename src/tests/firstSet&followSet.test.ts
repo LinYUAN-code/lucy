@@ -6,6 +6,7 @@ import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import generatorPredictTable, { checkPredickTableIsValid, predict } from "@/LL1/predictTable";
 import { transferString2Grammers } from "@/utils";
 import LL1Parser from "@/LL1/parser";
+import { GrammerSet } from "@/types/type";
 const testCases: Array<{
     nonTerminalSymbol: Array<string>,
     terminalsSet: Array<[string, RegExp]>,

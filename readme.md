@@ -5,6 +5,18 @@
 iife: https://linyuan-code.github.io/lucy/dist/index.iife.js
 esm: https://linyuan-code.github.io/lucy/dist/index.esm.js
 
+npm(case vue):
+npm/pnpm i lucy-compiler
+
+```javascript
+import lucy from "lucy-compiler";
+const ll1Parser = new lucy.LL1Parser(
+  testCase.terminals,
+  testCase.nonTerminals,
+  testCase.grammers
+);
+```
+
 ## demo website
 
 open https://linyuan-code.github.io/lucy/demo/index.html in browser and open debug-tool-console

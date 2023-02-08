@@ -5,6 +5,8 @@ import path from "path";
 import resolve from "@rollup/plugin-node-resolve";
 import replace from "@rollup/plugin-replace";
 import stripCode from "rollup-plugin-strip-code";
+import dts from "rollup-plugin-dts";
+import tsConfigPaths from "rollup-plugin-tsconfig-paths";
 
 export default [
   {
@@ -24,6 +26,10 @@ export default [
         format: "iife",
         name: "lucy",
       },
+      {
+        file: "dist/index.cjs.js",
+        format: "cjs",
+      },
     ],
     plugins: [
       typescript({ tsconfig: "./tsconfig.json" }),
@@ -39,5 +45,10 @@ export default [
       commonjs(),
       terser(),
     ],
+  },
+  {
+    input: "./src/index.ts",
+    output: [{ file: "dist/index.d.ts", format: "es" }],
+    plugins: [tsConfigPaths(), dts.default()],
   },
 ];

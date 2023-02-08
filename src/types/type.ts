@@ -1,43 +1,43 @@
-type TockenType = string;
-type Position = {
+export type TockenType = string;
+export type Position = {
   line: number;
   column: number;
 };
-type Tocken = {
+export type Tocken = {
   tocken: Terminal;
   origin: string;
   position?: Position;
   Options?: Array<any>;
 };
-type NonTerminal = string;
-type Terminal = string;
-type Grammer = {
+export type NonTerminal = string;
+export type Terminal = string;
+export type Grammer = {
   nonTerminal: NonTerminal,
   derivations: Array<Array<NonTerminal | Terminal>>
 };
-type Grammers = Array<Grammer>;
-type GrammerSetLine = {
+export type Grammers = Array<Grammer>;
+export type GrammerSetLine = {
   tocken: NonTerminal | Terminal;
   terminals: Set<Terminal>;
   isTerminal?: boolean;
 };
-type GrammerSet = Array<GrammerSetLine>;
+export type GrammerSet = Array<GrammerSetLine>;
 
-type PredictLine = {
+export type PredictLine = {
   nonTerminal: string;
   terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;
 };
-type PredictTable = Array<PredictLine>;
+export type PredictTable = Array<PredictLine>;
 
-type PredictProcessLine = {
+export type PredictProcessLine = {
   parseStack: Array<Terminal | NonTerminal>,
   remainingInput: string,
   parseAction: string,
 }
 
 
-type Rule = Array<string>;
-type Process<T> = {
+export type Rule = Array<string>;
+export type Process<T> = {
   ruleIndex: number;
   result: T;
 }

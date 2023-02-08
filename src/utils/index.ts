@@ -1,4 +1,5 @@
 import Lexer from "@/lexer";
+import { Grammers } from "@/types/type";
 
 export function transferString2Grammers(lexer: Lexer, grammers: Array<string>): Grammers {
     return grammers.map(grammer => {

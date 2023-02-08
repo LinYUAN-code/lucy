@@ -1,6 +1,7 @@
 import generateFirstSet, { generateFirstSetProgressive } from "@/firstSet";
 import generateFllowSet, { generateFllowSetProgressive } from "@/followSet";
 import Lexer from "@/lexer";
+import { GrammerSet, PredictProcessLine, PredictTable, Process, Rule } from "@/types/type";
 import generatorPredictTable, { checkPredickTableIsValid, generatePredictTableProgressive, predict } from "./predictTable";
 
 export default class LL1Parser {

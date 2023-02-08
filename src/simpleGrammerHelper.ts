@@ -153,6 +153,16 @@ export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Arra
         nonTerminals = tockenAnaRes.nonTerminals;
         terminals = tockenAnaRes.terminals;
     }
+    const nonTerminals2DerivationMap = new Map<NonTerminal, string[][]>();
+    for (let grammer of grammers) {
+        grammer = grammer.replaceAll(/\s/g, "");
+        const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
+        const nonTerminal = arr[0];
+        const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+            return lexer.splitDerivation(derivation);
+        });
+        nonTerminals2DerivationMap.set(nonTerminal, derivations);
+    }
     let lexer = new Lexer(terminals, nonTerminals);
     for (let i = 0; i < nonTerminals.length; i++) {
         // 替换产生式

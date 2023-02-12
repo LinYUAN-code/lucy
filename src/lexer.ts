@@ -1,6 +1,6 @@
 import { NonTerminal, Terminal, Tocken } from "./types/type";
 import { safeRegCharacter } from "./utils";
-import { EndingCharacter } from "./utils/const";
+import { EmptyCharacter, EndingCharacter } from "./utils/const";
 import log from "./utils/log";
 
 export default class Lexer {
@@ -23,7 +23,7 @@ export default class Lexer {
     return this.source.slice(this.currentColumn);
   }
   public next(): Tocken {
-    if (this.currentColumn === this.source.length) {
+    if (this.currentColumn >= this.source.length) {
       return {
         tocken: EndingCharacter,
         origin: EndingCharacter
@@ -43,11 +43,29 @@ export default class Lexer {
   public pop(): Tocken {
     try {
       const tocken: Tocken = this.next();
-      this.currentColumn += tocken.origin.length;
+      if (tocken.tocken !== EndingCharacter) {
+        this.currentColumn += tocken.origin.length;
+      }
       return tocken;
     } catch (e) {
       throw e;
     }
+  }
+  public nextNotEmptyTerminal(): Tocken {
+    while (true) {
+      const tocken = this.next();
+      if (tocken.tocken !== "whiteSpace") {
+        return tocken;
+      }
+      this.currentColumn += tocken.origin.length;
+    }
+  }
+  public popNotEmptyTerminal(): Tocken {
+    const tocken = this.nextNotEmptyTerminal();
+    if (tocken.tocken !== EndingCharacter) {
+      this.currentColumn += tocken.origin.length;
+    }
+    return tocken;
   }
   public isTerminal(str: string) {
     let isTerminal = true;

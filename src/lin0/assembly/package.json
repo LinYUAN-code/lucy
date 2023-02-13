@@ -1,0 +1,16 @@
+{
+  "name": "assembly",
+  "version": "1.0.0",
+  "description": "as demo.s -o demo.o ld demo.o -o demo -L /Library/Developer/CommandLineTools/SDKs/MacOSX.sdk/usr/lib -lSystem echo $? # 查看程序返回值",
+  "main": "index.js",
+  "scripts": {
+    "build": "node build.js -- build",
+    "clean": "node build.js -- clean"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "args": "^5.0.3",
+    "node-cmd": "^5.0.0"
+  }
+}

@@ -17,6 +17,13 @@ export class VarDecl {
             ctx.arriableTable.set(x, 0);
         }
     }
+    public toAssembly(stringLiteralsMap: Map<string, string>): string {
+        let ans = "";
+        return ans;
+    }
+    public getStringLiterals(): string[] {
+        return [];
+    }
 }
 export class Assign {
     identifier: string;
@@ -30,6 +37,13 @@ export class Assign {
     }
     public execute(ctx: Context) {
         ctx.arriableTable.set(this.identifier, this.expr.getValue(ctx));
+    }
+    public toAssembly(stringLiteralsMap: Map<string, string>): string {
+        let ans = "";
+        return ans;
+    }
+    public getStringLiterals(): string[] {
+        return [];
     }
 }
 
@@ -48,6 +62,10 @@ export class Arguments {
             return val.getValue(ctx);
         })
     }
+    public toAssembly(): string {
+        let ans = "";
+        return ans;
+    }
 }
 
 export class Print {
@@ -59,6 +77,34 @@ export class Print {
     }
     public execute(ctx: Context) {
         console.log(...this.arguments.getValue(ctx))
+    }
+    public toAssembly(stringLiteralsMap: Map<string, string>): string {
+        let ans = "    pushq    %rbp\n";
+        for (let argument of this.arguments.val) {
+            let pos = "";
+            if (typeof argument === "string") {
+                // 字符串
+                pos = stringLiteralsMap.get(argument)!;
+            } else if ((argument as any) instanceof AdditiveExpression) {
+                // 表达式 TODO!
+                continue;
+            }
+            console.log(argument, pos);
+            ans +=
+                `    leaq    ${pos}(%rip), %rdi 
+    callq   _printf\n`
+        }
+        ans += "    popq    %rbp\n"
+        return ans;
+    }
+    public getStringLiterals(): string[] {
+        let ans = [];
+        for (let argument of this.arguments.val) {
+            if (typeof argument === "string") {
+                ans.push(argument);
+            }
+        }
+        return ans;
     }
 }
 

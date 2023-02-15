@@ -18,4 +18,15 @@ test("first set test", () => {
         print(a,c);
     `)
     // [print] 81 10
+    const s = interpreter.toAssembly(`
+        int a, b, c, d;
+        a = 1 + 2 * ( 2 + 2 );
+        c = 5;
+        d = 10;
+        b = c + d;
+
+        print("hello world");
+        print(a);
+    `)
+    console.log(s);
 })

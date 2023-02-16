@@ -1,3 +1,4 @@
+/* eslint-disable quotes */
 
 
 export type S = Array<Stmt>;
@@ -81,18 +82,21 @@ export class Print {
     public toAssembly(stringLiteralsMap: Map<string, string>): string {
         let ans = "    pushq    %rbp\n";
         for (let argument of this.arguments.val) {
-            let pos = "";
             if (typeof argument === "string") {
                 // 字符串
-                pos = stringLiteralsMap.get(argument)!;
+                ans +=
+                    `    leaq    ${stringLiteralsMap.get(argument.replaceAll("\n", "\\n"))!}(%rip), %rdi 
+    xorb %al, %al
+    callq   _printf\n`
             } else if ((argument as any) instanceof AdditiveExpression) {
                 // 表达式 TODO!
-                continue;
+                ans +=
+
+                    `    leaq    ${stringLiteralsMap.get(`\"%d\\n\"`)!}(%rip), %rdi 
+    movq    $100, %rsi
+    xorb %al, %al
+    callq   _printf\n`;
             }
-            console.log(argument, pos);
-            ans +=
-                `    leaq    ${pos}(%rip), %rdi 
-    callq   _printf\n`
         }
         ans += "    popq    %rbp\n"
         return ans;
@@ -134,6 +138,9 @@ export class AdditiveExpression {
             throw new Error("[AdditiveExpression] getValue")
         }
         return this.e1.getValue(ctx);
+    }
+    public getAssembly(): string {
+        throw new Error("");
     }
 }
 

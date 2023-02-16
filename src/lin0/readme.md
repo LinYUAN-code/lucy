@@ -109,3 +109,20 @@ E' =>
 | '\*' E E'
 | '/' E E'
 | EmptyCharater
+
+难点： 如何用汇编计算通用表达式
+
+ABI
+
+x86-64 一共有 16 个 64-bit(8-byte)的寄存器。%rax, %rbx, %rcx, %rdx, %rdi, %rsi, %rbp, %rsp, %r8-r15. 其中%rax, %rcx, %rdx, %rdi, %rsi, %rsp, and %r8-r11 是 caller-save，就是他们不会跨函数保存。一般 rax 用来保存函数的返回值。如果返回值的大小超过 64bits，那就不用 rax 了，因为放不下，就通过 stack 来保存。
+
+%rbx, %rbp, %r12-r15 叫 callee-save，就是他们可以跨函数保存。rsp 是栈指针，永远指向栈顶。 %rdi, %rsi, %rdx, %rcx, %r8, %r9 用来传 function 的前 6 个参数。参数再多了就也用 stack 了。
+
+原文链接：https://blog.csdn.net/bassbian/article/details/128323989
+
+为什么调用 \_printf 要 clear AL
+
+https://www.dazhuanlan.com/babel1999/topics/975152
+
+函数调用寄存器顺序
+rdi, rsi, rdx, rcx, r8, r9，栈....

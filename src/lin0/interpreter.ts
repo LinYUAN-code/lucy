@@ -1,7 +1,7 @@
+/* eslint-disable quotes */
 import Parser from "./parser";
-import parser from "./parser";
 import { Context, Stmt, VarDecl } from "./types";
-
+import fs from "fs"
 
 export default class Interpreter {
     public context: Context;
@@ -52,19 +52,23 @@ ${this.getExecuteAssembly(stmts)}
         let stringLiteralIndex = 0;
         for (let stmt of stmts) {
             const stringLiterals = stmt.getStringLiterals();
+            console.log(stringLiterals);
             for (let literal of stringLiterals) {
                 if (!stringLiteralsMap.has(literal)) {
-                    stringLiteralsMap.set(literal, `L_.str.${stringLiteralIndex}`);
+                    literal = literal.replaceAll("\n", "\\n");
+                    stringLiteralsMap.set(literal, `L_.str.${stringLiteralIndex++}`);
                 }
             }
         }
+        stringLiteralsMap.set(`\"%d\\n\"`, `L_.str.${stringLiteralIndex++}`);
         for (let stmt of stmts) {
             ans += stmt.toAssembly(stringLiteralsMap);
         }
+        ans += "    retq\n";
+        ans += "    .section	__TEXT, __cstring\n";
         for (let literal of stringLiteralsMap.keys()) {
-            ans += "    .section	__TEXT, __cstring\n";
             ans += `${stringLiteralsMap.get(literal)}:
-    .asciz ${literal}`;
+    .asciz ${literal}\n`;
         }
         return ans;
     }

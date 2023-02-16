@@ -12,10 +12,14 @@ _main:                                  ## @main
 	.cfi_def_cfa_register %rbp
 	subq	$16, %rsp
 	movl	$0, -4(%rbp)
+	movl	_a(%rip), %eax
+	addl	_b(%rip), %eax
+	imull	_b(%rip), %eax
+	movl	%eax, _a(%rip)
+	movl	_a(%rip), %esi
+	addl	_b(%rip), %esi
+	imull	_b(%rip), %esi
 	leaq	L_.str(%rip), %rdi
-	movb	$0, %al
-	callq	_printf
-	leaq	L_.str.1(%rip), %rdi
 	movb	$0, %al
 	callq	_printf
 	xorl	%eax, %eax
@@ -24,11 +28,19 @@ _main:                                  ## @main
 	retq
 	.cfi_endproc
                                         ## -- End function
+	.section	__DATA,__data
+	.globl	_a                              ## @a
+	.p2align	2
+_a:
+	.long	1                               ## 0x1
+
+	.globl	_b                              ## @b
+	.p2align	2
+_b:
+	.long	10                              ## 0xa
+
 	.section	__TEXT,__cstring,cstring_literals
 L_.str:                                 ## @.str
-	.asciz	"hello world"
-
-L_.str.1:                               ## @.str.1
-	.asciz	"linrenjun"
+	.asciz	"hello world %d"
 
 .subsections_via_symbols

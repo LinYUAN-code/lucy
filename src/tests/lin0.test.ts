@@ -1,5 +1,6 @@
 import Interpreter from "@/lin0/interpreter";
-
+import fs from "fs";
+import path from "path"
 test("first set test", () => {
     const interpreter = new Interpreter();
     interpreter.run(`
@@ -18,4 +19,17 @@ test("first set test", () => {
         print(a,c);
     `)
     // [print] 81 10
+    const s = interpreter.toAssembly(`
+        int a, b, c, d;
+        a = 1 + 2 * ( 2 + 2 );
+        c = 5;
+        d = 10;
+        b = c + d;
+
+        print("hello world\n");
+        print(a);
+    `)
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin0.s"), s);
+
+    console.log(s);
 })

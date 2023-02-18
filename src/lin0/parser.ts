@@ -8,6 +8,7 @@ const terminals: Array<[string, RegExp]> = [
     ["/", /^\//],
     ["+", /^\+/],
     ["*", /^\*/],
+    ["%", /^\%/],
     ["(", /^\(/],
     [")", /^\)/],
     ["=", /^=/],
@@ -136,36 +137,49 @@ export default class Parser {
     parse_AdditiveExpression(): AdditiveExpression {
         let e1 = this.parse_MultiplicativeExpression();
         let tocken = this.lexer.nextNotEmptyTerminal();
-        const opt = tocken.tocken;
+        let opt = tocken.tocken;
         if (!["+", "-"].includes(opt)) {
             return new AdditiveExpression({
                 e1
             })
         }
-        this.lexer.popNotEmptyTerminal();
-        let e2 = this.parse_MultiplicativeExpression();
-        return new AdditiveExpression({
-            e1,
-            e2,
-            opt
+        let e = new AdditiveExpression({
+            e1
         })
+        while (["+", "-"].includes(opt)) {
+            this.lexer.popNotEmptyTerminal();
+            e.e2 = this.parse_MultiplicativeExpression();
+            e.opt = opt;
+            e = new AdditiveExpression({
+                e1: e,
+            })
+            opt = this.lexer.nextNotEmptyTerminal().tocken;
+        }
+        return e;
+
     }
     parse_MultiplicativeExpression(): MultiplicativeExpression {
         let e1 = this.parse_UnaryExpression();
         let tocken = this.lexer.nextNotEmptyTerminal();
-        const opt = tocken.tocken;
-        if (!["*", "/"].includes(opt)) {
+        let opt = tocken.tocken;
+        if (!["*", "/", "%"].includes(opt)) {
             return new MultiplicativeExpression({
                 e1
             })
         }
-        this.lexer.popNotEmptyTerminal();
-        let e2 = this.parse_UnaryExpression();
-        return new MultiplicativeExpression({
-            e1,
-            e2,
-            opt
+        let e = new MultiplicativeExpression({
+            e1
         })
+        while (["*", "/", "%"].includes(opt)) {
+            this.lexer.popNotEmptyTerminal();
+            e.e2 = this.parse_UnaryExpression();
+            e.opt = opt;
+            e = new MultiplicativeExpression({
+                e1: e,
+            })
+            opt = this.lexer.nextNotEmptyTerminal().tocken;
+        }
+        return e;
     }
     parse_UnaryExpression(): UnaryExpression {
         let tocken = this.lexer.nextNotEmptyTerminal();

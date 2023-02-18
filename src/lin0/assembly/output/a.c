@@ -1,8 +1,7 @@
 #include <stdio.h>
-int a = 1;
-int b = 10;
+long long a = 1;
+long long  b = 10;
 int main() {
-    a = (a+b)*b;
-    printf("hello world %d",(a+b)*b);
+    printf("hello world %lld",b / a);
     return 0;
 }

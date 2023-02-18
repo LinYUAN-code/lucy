@@ -3,6 +3,7 @@
 
 export type S = Array<Stmt>;
 export type Stmt = VarDecl | Assign | Print;
+
 export class VarDecl {
     type: string;
     identifiers: string[];
@@ -40,7 +41,12 @@ export class Assign {
         ctx.arriableTable.set(this.identifier, this.expr.getValue(ctx));
     }
     public toAssembly(stringLiteralsMap: Map<string, string>): string {
-        let ans = "";
+        let ans = '';
+        const stackState = {
+            num: 0,
+        }
+        ans += this.expr.getTOSCAAssembly(stackState);
+        ans += `    popq    ${this.identifier}(%rip)\n`;
         return ans;
     }
     public getStringLiterals(): string[] {
@@ -80,25 +86,31 @@ export class Print {
         console.log(...this.arguments.getValue(ctx))
     }
     public toAssembly(stringLiteralsMap: Map<string, string>): string {
-        let ans = "    pushq    %rbp\n";
+        let ans = "";
         for (let argument of this.arguments.val) {
+            ans += "    pushq    %rbp\n";
+
             if (typeof argument === "string") {
                 // 字符串
                 ans +=
                     `    leaq    ${stringLiteralsMap.get(argument.replaceAll("\n", "\\n"))!}(%rip), %rdi 
-    xorb %al, %al
+    xorb    %al, %al
     callq   _printf\n`
             } else if ((argument as any) instanceof AdditiveExpression) {
                 // 表达式 TODO!
+                const stackState = {
+                    num: 0,
+                }
+                ans += argument.getTOSCAAssembly(stackState);
+                ans += '    popq    %rsi\n';
                 ans +=
-
                     `    leaq    ${stringLiteralsMap.get(`\"%d\\n\"`)!}(%rip), %rdi 
-    movq    $100, %rsi
-    xorb %al, %al
+    xorb    %al, %al
     callq   _printf\n`;
             }
+            ans += "    popq    %rbp\n"
+
         }
-        ans += "    popq    %rbp\n"
         return ans;
     }
     public getStringLiterals(): string[] {
@@ -115,11 +127,11 @@ export class Print {
 export type E = AdditiveExpression;
 
 export class AdditiveExpression {
-    e1: MultiplicativeExpression;
+    e1: AdditiveExpression | MultiplicativeExpression;
     e2?: MultiplicativeExpression;
     opt?: string;
     constructor({ e1, e2, opt }: {
-        e1: MultiplicativeExpression;
+        e1: AdditiveExpression | MultiplicativeExpression;
         e2?: MultiplicativeExpression;
         opt?: string;
     }) {
@@ -142,14 +154,47 @@ export class AdditiveExpression {
     public getAssembly(): string {
         throw new Error("");
     }
+    public getTOSCAAssembly(stackState: { num: number }): string {
+        let ans = '';
+        if (this.e2) {
+            ans += this.e2.getTOSCAAssembly(stackState);
+            ans += this.e1.getTOSCAAssembly(stackState);
+            if (stackState.num < 2) {
+                throw new Error("[AdditiveExpression] getTOSCAAssembly error");
+            }
+            stackState.num -= 1;
+            ans += `    popq    %r10\n`;
+            ans += `    popq    %r11\n`;
+            switch (this.opt) {
+                case "+":
+                    ans += `    addq    %r11, %r10\n`;
+                    break;
+                case "-":
+                    // 减法变化为加一个负数
+                    ans += `    subq    %r11, %r10\n`;
+                    break;
+            }
+            ans += `    pushq   %r10\n`;
+        } else {
+            ans += this.e1.getTOSCAAssembly(stackState);
+        }
+        return ans;
+    }
+    public getAllIdentifiers(): string[] {
+        const arr1 = this.e1.getAllIdentifiers();
+        if (this.e2) {
+            arr1.push(...this.e2.getAllIdentifiers());
+        }
+        return arr1;
+    }
 }
 
 export class MultiplicativeExpression {
-    e1: UnaryExpression;
+    e1: MultiplicativeExpression | UnaryExpression;
     e2?: UnaryExpression;
     opt?: string;
     constructor({ e1, e2, opt }: {
-        e1: UnaryExpression;
+        e1: MultiplicativeExpression | UnaryExpression;
         e2?: UnaryExpression;
         opt?: string;
     }) {
@@ -168,6 +213,52 @@ export class MultiplicativeExpression {
             throw new Error("[MultiplicativeExpression] getValue")
         }
         return this.e1.getValue(ctx);
+    }
+    public getTOSCAAssembly(stackState: { num: number }): string {
+        let ans = '';
+        if (this.e2) {
+            ans += this.e2.getTOSCAAssembly(stackState);
+            ans += this.e1.getTOSCAAssembly(stackState);
+            if (stackState.num < 2) {
+                throw new Error("[MultiplicativeExpression] getTOSCAAssembly error");
+            }
+            stackState.num -= 1;
+            ans += `    popq    %r10\n`;
+            ans += `    popq    %r11\n`;
+            switch (this.opt) {
+                case "*":
+                    ans += `    imulq    %r11, %r10\n`;
+                    ans += `    pushq   %r10\n`;
+                    break;
+                case "/":
+                    ans += `    pushq   %rdx\n`;
+                    ans += `    movq    %r10, %rax\n`;
+                    ans += `    cqto\n`;    // cqto 会扩展 rax => rdx:rax
+                    ans += `    idivq    %r11\n`;  // 商会放在rax 余数放在rdx
+                    ans += `    popq    %rdx\n`;
+                    ans += `    pushq   %rax\n`;
+                    break;
+                case "%":
+                    ans += `    pushq   %rdx\n`;
+                    ans += `    movq    %r10, %rax\n`;
+                    ans += `    cqto\n`;    // cqto 会扩展 rax => rdx:rax
+                    ans += `    idivq    %r11\n`;  // 商会放在rax 余数放在rdx
+                    ans += `    movq   %rdx, %r11\n`;
+                    ans += `    popq    %rdx\n`;
+                    ans += `    pushq   %r11\n`;
+                    break;
+            }
+        } else {
+            ans += this.e1.getTOSCAAssembly(stackState);
+        }
+        return ans;
+    }
+    public getAllIdentifiers(): string[] {
+        const arr1 = this.e1.getAllIdentifiers();
+        if (this.e2) {
+            arr1.push(...this.e2.getAllIdentifiers());
+        }
+        return arr1;
     }
 }
 
@@ -190,6 +281,23 @@ export class UnaryExpression {
             throw new Error("[UnaryExpression] getValue")
         }
         return this.e1.getValue(ctx);
+    }
+    public getTOSCAAssembly(stackState: { num: number }): string {
+        let ans = this.e1.getTOSCAAssembly(stackState);
+        if (this.opt) {
+            switch (this.opt) {
+                case "-":
+                    ans += `    popq    %r11\n`;
+                    ans += `    xorq    %r10, %r10\n`;
+                    ans += `    subq    %r11, %r10\n`;
+                    ans += `    pushq   %r10\n`;
+                    break;
+            }
+        }
+        return ans
+    }
+    public getAllIdentifiers(): string[] {
+        return this.e1.getAllIdentifiers();
     }
 }
 
@@ -220,6 +328,28 @@ export class PrimaryExpression {
             return ctx.arriableTable.get(this.identifier);
         }
         throw new Error("[PrimaryExpression] getValue")
+    }
+    public getTOSCAAssembly(stackState: { num: number }): string {
+        let ans = '';
+        if (this.e1) {
+            ans += this.e1.getTOSCAAssembly(stackState);
+        } else if (this.val) {
+            stackState.num++;
+            ans += `    pushq    $${this.val}\n`
+        } else if (this.identifier) {
+            stackState.num++;
+            ans += `    pushq    ${this.identifier}(%rip)\n`;
+        }
+        return ans;
+    }
+    public getAllIdentifiers(): string[] {
+        if (this.e1) {
+            return this.e1.getAllIdentifiers();
+        }
+        if (this.identifier) {
+            return [this.identifier];
+        }
+        return [];
     }
 }
 

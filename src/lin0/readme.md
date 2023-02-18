@@ -49,6 +49,7 @@ Arguments => Arguments ',' E | Arguments ',' T_StringConstant ｜ E ｜ T_String
 E '+' E
 | E '-' E
 | E '\*' E
+| E '%' E
 | E '/' E
 | '-' E
 | T_IntConstant
@@ -57,13 +58,14 @@ E '+' E
 E => AdditiveExpression
 AdditiveExpression =>
 MultiplicativeExpression |
-MultiplicativeExpression + MultiplicativeExpression |
-MultiplicativeExpression - MultiplicativeExpression
+AdditiveExpression + MultiplicativeExpression |
+AdditiveExpression - MultiplicativeExpression
 
 MultiplicativeExpression =>
 UnaryExpression
-UnaryExpression \* UnaryExpression |
-UnaryExpression / UnaryExpression |
+MultiplicativeExpression \* UnaryExpression |
+MultiplicativeExpression / UnaryExpression |
+MultiplicativeExpression % UnaryExpression |
 
 UnaryExpression =>
 PrimaryExpression |
@@ -111,6 +113,8 @@ E' =>
 | EmptyCharater
 
 难点： 如何用汇编计算通用表达式
+打算用 n-TOSCA 来实现--单寄存器缓存表达式栈 （n=0,r10 & r11 use for calculate ; n=1,rax use for stack top，r10 & r11 use for calculate）
+ref：https://www.zhihu.com/question/29355187
 
 ABI
 
@@ -126,3 +130,16 @@ https://www.dazhuanlan.com/babel1999/topics/975152
 
 函数调用寄存器顺序
 rdi, rsi, rdx, rcx, r8, r9，栈....
+
+局部变量可以使用 rbp 来定位代码位置
+
+```javascript
+// ready for stack
+const needSpace = Math.max(0, identifiers.length - 1);
+if (needSpace) {
+  // -8k(%rbp)
+  ans += `    push %rbp
+                movq    %rsp, %rbp
+                subq    $8, %rsp`;
+}
+```

@@ -52,7 +52,6 @@ ${this.getExecuteAssembly(stmts)}
         let stringLiteralIndex = 0;
         for (let stmt of stmts) {
             const stringLiterals = stmt.getStringLiterals();
-            console.log(stringLiterals);
             for (let literal of stringLiterals) {
                 if (!stringLiteralsMap.has(literal)) {
                     literal = literal.replaceAll("\n", "\\n");
@@ -64,6 +63,7 @@ ${this.getExecuteAssembly(stmts)}
         for (let stmt of stmts) {
             ans += stmt.toAssembly(stringLiteralsMap);
         }
+        ans += "    xor    %rax, %rax\n";
         ans += "    retq\n";
         ans += "    .section	__TEXT, __cstring\n";
         for (let literal of stringLiteralsMap.keys()) {

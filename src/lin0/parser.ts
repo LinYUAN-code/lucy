@@ -1,8 +1,9 @@
 import { Tocken } from "@/types/type";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import { Lexer } from "..";
-import { AdditiveExpression, Arguments, Assign, E, MultiplicativeExpression, PrimaryExpression, Print, S, Stmt, UnaryExpression, VarDecl } from "./types";
+import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return } from "./types";
 
+let global = false;
 const terminals: Array<[string, RegExp]> = [
     ["-", /^-/],
     ["/", /^\//],
@@ -14,9 +15,15 @@ const terminals: Array<[string, RegExp]> = [
     ["=", /^=/],
     [",", /^,/],
     [";", /^;/],
-    ["int", /^int/],
+    ["{", /^{/],
+    ["}", /^}/],
+    [":", /^:/],
+    ["global", /^global/],
+    ["return", /^return/],
+    ["BasicType", /^int/],
     ["print", /^print/],
     ["string", /^"[^"]*"/],
+    ["function", /^function/],
     ["integer", /^(([1-9]*[0-9])|([0-9]))/],
     ["identifier", /^[_a-zA-Z][a-zA-Z0-9]*/],
     ["whiteSpace", /^\s/],
@@ -42,7 +49,7 @@ export default class Parser {
                 break;
             }
             try {
-                const stmt = this.parse_Stmt();
+                const stmt = this.parse_GlobalDefinition();
                 res.push(stmt);
             } catch (e) {
                 console.log(e);
@@ -51,27 +58,104 @@ export default class Parser {
         }
         return res;
     }
-    parse_Stmt(): Stmt {
+    parse_GlobalDefinition(): GlobalDefinition {
         const tocken = this.lexer.nextNotEmptyTerminal();
         switch (tocken.tocken) {
-            case "int":
+            case "BasicType":
+                global = true;
                 const stmt = this.parse_VarDecl();
+                global = false;
                 this.expect(";", "parse_Stmt");
                 return stmt;
-            case "identifier":
-                return this.parse_Assign();
-            case "print":
-                return this.parse_Print();
+            case "function":
+                return this.parse_Function();
         }
         throw new Error("[parse_Stmt]");
     }
-    parse_VarDecl(): VarDecl {
-        this.expect("int", "[parse_VarDecl]");
-        let varDecl: VarDecl = new VarDecl({
-            type: "int",
-            identifiers: []
+    parse_BlockBody(): BlockBody {
+        this.expect("{", "parse_BlockBody");
+        let res: BlockBody = [];
+        while (true) {
+            const tocken = this.lexer.nextNotEmptyTerminal();
+            switch (tocken.tocken) {
+                case "BasicType":
+                    const stmt = this.parse_VarDecl();
+                    this.expect(";", "parse_Stmt");
+                    res.push(stmt);
+                    break;
+                case "identifier":
+                    res.push(this.parse_Assign());
+                    break;
+                case "print":
+                    res.push(this.parse_Print());
+                    break;
+                case "return":
+                    res.push(this.parse_Return());
+                    break;
+                default:
+                    this.expect("}", "parse_BlockBody");
+                    return res;
+            }
+        }
+    }
+    parse_Return(): Return {
+        this.expect("return", "parse_Return");
+        let e = this.parse_E();
+        this.expect(";", "parse_Return");
+        return new Return({
+            e
+        });
+    }
+    parse_FunctionArgumentDefinition(): FunctionArgumentDefinition {
+        let tocken = this.lexer.nextNotEmptyTerminal();
+        let argumentDefinition = new FunctionArgumentDefinition({});
+        if (tocken.tocken !== "BasicType") {
+            return argumentDefinition;
+        }
+        while (true) {
+            const typeTocken = this.expect("BasicType", "parse_FunctionArgumentDefinition");
+            tocken = this.expect("identifier", "parse_FunctionArgumentDefinition");
+            argumentDefinition.variables.push(new Variable({
+                type: typeTocken.origin,
+                identifier: tocken.origin
+            }));
+            tocken = this.lexer.nextNotEmptyTerminal();
+            if (tocken.tocken !== ",") {
+                break;
+            }
+            this.lexer.popNotEmptyTerminal();
+        }
+        return argumentDefinition;
+    }
+    parse_Function(): Function {
+        this.expect("function", "parse_Function");
+        let global = false;
+        if (this.predict("global")) {
+            global = true;
+        }
+        let functionNameTocken = this.expect("identifier", "parse_Function");
+        this.expect("(", "parse_Function");
+        let argumentDefinition = this.parse_FunctionArgumentDefinition();
+        this.expect(")", "parse_Function");
+        this.expect(":", "parse_Function");
+        let returnTypeTocken = this.expect("BasicType", "parse_Function");
+        let blockBody = this.parse_BlockBody();
+        return new Function({
+            functionName: functionNameTocken.origin,
+            blockBody,
+            argumentDefinition,
+            returnType: returnTypeTocken.origin,
+            global
         })
-        const tocken = this.expect("identifier", "parse_VarDecl");
+    }
+    parse_VarDecl(): VarDecl {
+        let tocken = this.expect("BasicType", "[parse_VarDecl]");
+        let varDecl: VarDecl = new VarDecl({
+            type: tocken.origin,
+            identifiers: [],
+            global: global,
+        })
+        tocken = this.expect("identifier", "parse_VarDecl");
         varDecl.identifiers.push(tocken.origin);
         while (true) {
             let tocken = this.lexer.nextNotEmptyTerminal();
@@ -223,5 +307,12 @@ export default class Parser {
             throw new Error(`[${error}] expect: ${_tocken} get: ${tocken.tocken}`);
         }
         return tocken;
+    }
+    predict(_tocken: string): Tocken | null {
+        const tocken = this.lexer.nextNotEmptyTerminal();
+        if (tocken.tocken === _tocken) {
+            this.lexer.popNotEmptyTerminal();
+        }
+        return null;
     }
 }

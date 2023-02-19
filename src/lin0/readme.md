@@ -37,14 +37,23 @@ Print: 打印字符
 T_StringConstant: /^"[^"]\*"/
 T_Identifier: /^(([1-9]\*[0-9])|([0-9]))/
 T_Print: "print"
-T_Int: "int"
+BasicType: "int"
 
 S => Stmt | S Stmt
-Stmt => VarDecl ';' | Assign | Print
-VarDecl => T_Int T_Identifier | VarDecl ',' T_Identifier
+Stmt => VarDecl ';' | Assign | Print | Function
+VarDecl => BasicType T_Identifier | VarDecl ',' T_Identifier
 Assign => T_Identifier '=' E ';'
 Print => T_Print '(' Arguments ')' ';'
 Arguments => Arguments ',' E | Arguments ',' T_StringConstant ｜ E ｜ T_StringConstant
+
+FunctionArgumentDefinition => EmptyCharater | BasicType identifier FunctionArgumentDefinition | , BasicType identifier FunctionArgumentDefinition
+
+Function => function global(可选) identidier(FunctionArgumentDefinition): BasicType BlockBody
+
+BlockBody => VarDecl ';' BlockBody | Assign BlockBody | Print BlockBody
+
+Return => return E
+
 (E =>
 E '+' E
 | E '-' E

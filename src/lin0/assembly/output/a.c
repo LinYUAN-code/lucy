@@ -5,3 +5,7 @@ int main() {
     printf("hello world %lld",b / a);
     return 0;
 }
+
+extern int hello() {
+    return 0;
+}

@@ -25,6 +25,21 @@ _main:                                  ## @main
 	retq
 	.cfi_endproc
                                         ## -- End function
+	.globl	_hello                          ## -- Begin function hello
+	.p2align	4, 0x90
+_hello:                                 ## @hello
+	.cfi_startproc
+## %bb.0:
+	pushq	%rbp
+	.cfi_def_cfa_offset 16
+	.cfi_offset %rbp, -16
+	movq	%rsp, %rbp
+	.cfi_def_cfa_register %rbp
+	xorl	%eax, %eax
+	popq	%rbp
+	retq
+	.cfi_endproc
+                                        ## -- End function
 	.section	__DATA,__data
 	.globl	_a                              ## @a
 	.p2align	3

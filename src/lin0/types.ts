@@ -1,27 +1,113 @@
 /* eslint-disable quotes */
 
+import { al, Assembly, I, INS, r10, r11, rax, rbp, rdi, rdx, rsi } from "./assembly";
 
-export type S = Array<Stmt>;
-export type Stmt = VarDecl | Assign | Print;
+
+export type S = Array<GlobalDefinition>;
+export type GlobalDefinition = VarDecl | Function;
+export type BlockBody = Array<VarDecl | Assign | Print | Return>;
+
+
+
+export class Function {
+    functionName: string;
+    blockBody: BlockBody;
+    argumentDefinition: FunctionArgumentDefinition;
+    returnType: string;
+    global?: boolean;
+    constructor({ functionName, blockBody, argumentDefinition, returnType, global }: {
+        blockBody: BlockBody;
+        argumentDefinition: FunctionArgumentDefinition;
+        returnType: string;
+        functionName: string;
+        global?: boolean;
+    }) {
+        this.functionName = functionName;
+        this.blockBody = blockBody;
+        this.argumentDefinition = argumentDefinition;
+        this.returnType = returnType;
+        this.global = (functionName === "main") ? true : false;
+    }
+    public execute(ctx: Context) {
+    }
+    public toAssembly(assembly: Assembly): INS[] {
+        const ins: INS[] = [];
+
+        this.blockBody.forEach(stmt => {
+            ins.push(...stmt.toAssembly(assembly));
+        })
+        assembly.appendFunction(this.functionName, ins, this.global);
+        return [];
+    }
+    public getStringLiterals(): string[] {
+        return [];
+    }
+}
+export class Variable {
+    type: string;
+    identifier: string;
+    constructor({ type, identifier }: {
+        type: string;
+        identifier: string;
+    }) {
+        this.identifier = identifier;
+        this.type = type;
+    }
+}
+export class FunctionArgumentDefinition {
+    variables: Variable[];
+    constructor({ variables = [] }: {
+        variables?: Variable[];
+    }) {
+        this.variables = variables;
+    }
+    public execute(ctx: Context) {
+
+    }
+    public toAssembly(stringLiteralsMap: Map<string, string>): string {
+        let ans = "";
+        return ans;
+    }
+    public getStringLiterals(): string[] {
+        return [];
+    }
+}
+
 
 export class VarDecl {
     type: string;
     identifiers: string[];
-    constructor({ type, identifiers }: {
+    global?: boolean;
+    constructor({ type, identifiers, global }: {
         type: string;
         identifiers: string[];
+        global?: boolean;
     }) {
         this.identifiers = identifiers;
         this.type = type;
+        this.global = global;
     }
     public execute(ctx: Context) {
         for (let x of this.identifiers) {
             ctx.arriableTable.set(x, 0);
         }
     }
-    public toAssembly(stringLiteralsMap: Map<string, string>): string {
-        let ans = "";
-        return ans;
+    public toAssembly(assembly: Assembly): INS[] {
+        if (!this.global) {
+            return [];
+        } else {
+            // 全局变量
+            let type = "";
+            switch (this.type) {
+                case "int":
+                    type = "quad";
+                    break;
+            }
+            for (let identifier of this.identifiers) {
+                assembly.appendGlobalData(identifier, type, "0x0");
+            }
+            return [];
+        }
     }
     public getStringLiterals(): string[] {
         return [];
@@ -40,13 +126,13 @@ export class Assign {
     public execute(ctx: Context) {
         ctx.arriableTable.set(this.identifier, this.expr.getValue(ctx));
     }
-    public toAssembly(stringLiteralsMap: Map<string, string>): string {
-        let ans = '';
+    public toAssembly(assembly: Assembly): INS[] {
+        let ans: INS[] = [];
         const stackState = {
             num: 0,
         }
-        ans += this.expr.getTOSCAAssembly(stackState);
-        ans += `    popq    ${this.identifier}(%rip)\n`;
+        ans.push(...this.expr.getTOSCAAssembly(stackState));
+        ans.push(I('popq', `${this.identifier}(%rip)`))
         return ans;
     }
     public getStringLiterals(): string[] {
@@ -85,31 +171,29 @@ export class Print {
     public execute(ctx: Context) {
         console.log(...this.arguments.getValue(ctx))
     }
-    public toAssembly(stringLiteralsMap: Map<string, string>): string {
-        let ans = "";
+    public toAssembly(assembly: Assembly): INS[] {
+        let ans: INS[] = [];
         for (let argument of this.arguments.val) {
-            ans += "    pushq    %rbp\n";
+            ans.push(I('pushq', rbp));
 
             if (typeof argument === "string") {
                 // 字符串
-                ans +=
-                    `    leaq    ${stringLiteralsMap.get(argument.replaceAll("\n", "\\n"))!}(%rip), %rdi 
-    xorb    %al, %al
-    callq   _printf\n`
+                ans.push(I('leaq', assembly.getStringLiteralPos(argument), rdi));
+                ans.push(I('xorb', al, al));
+                ans.push(I('callq', '_printf'));
+
             } else if ((argument as any) instanceof AdditiveExpression) {
                 // 表达式 TODO!
                 const stackState = {
                     num: 0,
                 }
-                ans += argument.getTOSCAAssembly(stackState);
-                ans += '    popq    %rsi\n';
-                ans +=
-                    `    leaq    ${stringLiteralsMap.get(`\"%d\\n\"`)!}(%rip), %rdi 
-    xorb    %al, %al
-    callq   _printf\n`;
+                ans.push(...argument.getTOSCAAssembly(stackState));
+                ans.push(I('popq', rsi));
+                ans.push(I('leaq', assembly.getStringLiteralPos('"%d\n"'), rdi));
+                ans.push(I('xorb', al, al));
+                ans.push(I('callq', '_printf'));
             }
-            ans += "    popq    %rbp\n"
-
+            ans.push(I('popq', rbp));
         }
         return ans;
     }
@@ -120,6 +204,27 @@ export class Print {
                 ans.push(argument);
             }
         }
+        return ans;
+    }
+}
+
+export class Return {
+    e: E;
+    constructor({ e }: {
+        e: E;
+    }) {
+        this.e = e;
+    }
+
+    public toAssembly(assembly: Assembly): INS[] {
+        let ans: INS[] = [];
+        ans.push(...this.e.getTOSCAAssembly({ num: 0 }));
+        ans.push(I('popq', rax));
+        ans.push(I('retq'));
+        return ans;
+    }
+    public getStringLiterals(): string[] {
+        let ans: string[] = [];
         return ans;
     }
 }
@@ -154,29 +259,28 @@ export class AdditiveExpression {
     public getAssembly(): string {
         throw new Error("");
     }
-    public getTOSCAAssembly(stackState: { num: number }): string {
-        let ans = '';
+    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+        let ans: INS[] = [];
         if (this.e2) {
-            ans += this.e2.getTOSCAAssembly(stackState);
-            ans += this.e1.getTOSCAAssembly(stackState);
+            ans.push(...this.e2.getTOSCAAssembly(stackState));
+            ans.push(...this.e1.getTOSCAAssembly(stackState));
             if (stackState.num < 2) {
                 throw new Error("[AdditiveExpression] getTOSCAAssembly error");
             }
             stackState.num -= 1;
-            ans += `    popq    %r10\n`;
-            ans += `    popq    %r11\n`;
+            ans.push(I("popq", "r10"));
+            ans.push(I("popq", "r11"));
             switch (this.opt) {
                 case "+":
-                    ans += `    addq    %r11, %r10\n`;
+                    ans.push(I("addq", r11, r10));
                     break;
                 case "-":
-                    // 减法变化为加一个负数
-                    ans += `    subq    %r11, %r10\n`;
+                    ans.push(I('subq', r11, r10));
                     break;
             }
-            ans += `    pushq   %r10\n`;
+            ans.push(I('pushq', r10));
         } else {
-            ans += this.e1.getTOSCAAssembly(stackState);
+            ans.push(...this.e1.getTOSCAAssembly(stackState));
         }
         return ans;
     }
@@ -214,42 +318,43 @@ export class MultiplicativeExpression {
         }
         return this.e1.getValue(ctx);
     }
-    public getTOSCAAssembly(stackState: { num: number }): string {
-        let ans = '';
+    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+        let ans: INS[] = [];
         if (this.e2) {
-            ans += this.e2.getTOSCAAssembly(stackState);
-            ans += this.e1.getTOSCAAssembly(stackState);
+            ans.push(...this.e2.getTOSCAAssembly(stackState));
+            ans.push(...this.e1.getTOSCAAssembly(stackState));
             if (stackState.num < 2) {
                 throw new Error("[MultiplicativeExpression] getTOSCAAssembly error");
             }
             stackState.num -= 1;
-            ans += `    popq    %r10\n`;
-            ans += `    popq    %r11\n`;
+            ans.push(I("popq", "r10"));
+            ans.push(I("popq", "r11"));
             switch (this.opt) {
                 case "*":
-                    ans += `    imulq    %r11, %r10\n`;
-                    ans += `    pushq   %r10\n`;
+                    ans.push(I('imulq', r11, r10));
+                    ans.push(I('pushq', r10));
                     break;
                 case "/":
-                    ans += `    pushq   %rdx\n`;
-                    ans += `    movq    %r10, %rax\n`;
-                    ans += `    cqto\n`;    // cqto 会扩展 rax => rdx:rax
-                    ans += `    idivq    %r11\n`;  // 商会放在rax 余数放在rdx
-                    ans += `    popq    %rdx\n`;
-                    ans += `    pushq   %rax\n`;
+                    ans.push(I('pushq', rdx));
+                    ans.push(I('movq', r10, rax));
+                    ans.push(I('cqto'));
+                    ans.push(I('idivq', r11));
+                    ans.push(I('popq', rdx));
+                    ans.push(I('pushq', rax));
                     break;
                 case "%":
-                    ans += `    pushq   %rdx\n`;
-                    ans += `    movq    %r10, %rax\n`;
-                    ans += `    cqto\n`;    // cqto 会扩展 rax => rdx:rax
-                    ans += `    idivq    %r11\n`;  // 商会放在rax 余数放在rdx
-                    ans += `    movq   %rdx, %r11\n`;
-                    ans += `    popq    %rdx\n`;
-                    ans += `    pushq   %r11\n`;
+                    ans.push(I('pushq', rdx));
+                    ans.push(I('movq', r10, rax));
+                    ans.push(I('cqto'));
+                    ans.push(I('idivq', r11));
+                    ans.push(I('movq', rdx, r11));
+                    ans.push(I('popq', rdx));
+                    ans.push(I('pushq', r11));
+
                     break;
             }
         } else {
-            ans += this.e1.getTOSCAAssembly(stackState);
+            ans.push(...this.e1.getTOSCAAssembly(stackState));
         }
         return ans;
     }
@@ -282,15 +387,15 @@ export class UnaryExpression {
         }
         return this.e1.getValue(ctx);
     }
-    public getTOSCAAssembly(stackState: { num: number }): string {
-        let ans = this.e1.getTOSCAAssembly(stackState);
+    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+        let ans: INS[] = this.e1.getTOSCAAssembly(stackState);
         if (this.opt) {
             switch (this.opt) {
                 case "-":
-                    ans += `    popq    %r11\n`;
-                    ans += `    xorq    %r10, %r10\n`;
-                    ans += `    subq    %r11, %r10\n`;
-                    ans += `    pushq   %r10\n`;
+                    ans.push(I('popq', r11));
+                    ans.push(I('xorq', r10, r10));
+                    ans.push(I('subq', r11, r10));
+                    ans.push(I('pushq', r10));;
                     break;
             }
         }
@@ -329,16 +434,16 @@ export class PrimaryExpression {
         }
         throw new Error("[PrimaryExpression] getValue")
     }
-    public getTOSCAAssembly(stackState: { num: number }): string {
-        let ans = '';
+    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+        let ans: INS[] = [];
         if (this.e1) {
-            ans += this.e1.getTOSCAAssembly(stackState);
-        } else if (this.val) {
+            ans.push(...this.e1.getTOSCAAssembly(stackState));
+        } else if (!isNaN(this.val as any)) {
             stackState.num++;
-            ans += `    pushq    $${this.val}\n`
+            ans.push(I('pushq', `$${this.val}`))
         } else if (this.identifier) {
             stackState.num++;
-            ans += `    pushq    ${this.identifier}(%rip)\n`;
+            ans.push(I('pushq', `${this.identifier}(%rip)`))
         }
         return ans;
     }
@@ -360,3 +465,4 @@ export class Context {
         this.arriableTable = new Map();
     }
 }
+

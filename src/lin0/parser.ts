@@ -74,7 +74,7 @@ export default class Parser {
     }
     parse_BlockBody(): BlockBody {
         this.expect("{", "parse_BlockBody");
-        let res: BlockBody = [];
+        let res: BlockBody = new BlockBody({ body: [] });
         while (true) {
             const tocken = this.lexer.nextNotEmptyTerminal();
             switch (tocken.tocken) {

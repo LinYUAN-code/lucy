@@ -12,6 +12,37 @@ type Function = {
     methodName: string;
     methodBody: INS[];
     global: boolean;
+    stackSize: number;
+}
+export class CompileContext {
+    variableTable: Map<string, number>;
+    blockDeep: number;
+    slotSum: number;
+    constructor() {
+        this.blockDeep = 0;
+        this.slotSum = 0;
+        this.variableTable = new Map();
+    }
+    enterBlock() {
+        this.blockDeep++;
+    }
+    leaveBlock() {
+        this.blockDeep--;
+    }
+    findVariable(identifier: string, size: number) {
+        console.log(`${identifier}.${this.blockDeep}`);
+        this.slotSum += size;
+        this.variableTable.set(`${identifier}.${this.blockDeep}`, this.slotSum);
+    }
+    getVariablePos(identifier: string): string {
+        const key = `${identifier}.${this.blockDeep}`;
+        console.log("get", key);
+        if (this.variableTable.has(key)) {
+            return `-${this.variableTable.get(key)!}(%rbp)`;
+        } else {
+            return `${identifier}(%rip)`;
+        }
+    }
 }
 
 export const INS_SPACE = "    ";
@@ -22,6 +53,7 @@ export class Assembly {
     stringLiteralsMap: Map<string, string>;
     stringLiteralIndex: number;
     stringLiteralPrefix: string;
+    compileContext?: CompileContext;
     constructor() {
         this.globalData = [];
         this.functions = [];
@@ -30,6 +62,18 @@ export class Assembly {
         this.stringLiteralIndex = 0;
         this.stringLiteralPrefix = "L.str.";
     }
+    setupCompileContext() {
+        this.compileContext = new CompileContext();
+    }
+    removeCompileContext() {
+        this.compileContext = undefined;
+    }
+    getCompileContext(): CompileContext {
+        if (!this.compileContext) {
+            throw new Error("[getCompileContext]");
+        }
+        return this.compileContext;
+    }
     appendGlobalData(name: string, type: string, val: string) {
         this.globalData.push({
             name,
@@ -37,11 +81,12 @@ export class Assembly {
             val
         });
     }
-    appendFunction(methodName: string, methodBody: INS[], global: boolean = false) {
+    appendFunction(methodName: string, methodBody: INS[], stackSize: number, global: boolean = false) {
         this.functions.push({
             methodName,
             methodBody,
-            global
+            stackSize,
+            global,
         })
     }
     appendStringLiteral(val: string) {
@@ -71,7 +116,12 @@ export class Assembly {
             ans += `${INS_SPACE}.global _${method.methodName}\n`;
         }
         ans += `_${method.methodName}:\n`;
+        ans += I("movq", rsp, rbx).toRealInstrument();
+        ans += I("subq", `$${method.stackSize}`, rsp).toRealInstrument();
         for (let ins of method.methodBody) {
+            if (ins.ins === "retq") {
+                ans += I("addq", `$${method.stackSize}`, rsp).toRealInstrument();
+            }
             ans += ins.toRealInstrument();
         }
         return ans;

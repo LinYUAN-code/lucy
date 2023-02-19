@@ -1,13 +1,53 @@
 /* eslint-disable quotes */
 
-import { al, Assembly, I, INS, r10, r11, rax, rbp, rdi, rdx, rsi } from "./assembly";
+import { al, Assembly, CompileContext, I, INS, r10, r11, rax, rbp, rbx, rdi, rdx, rsi, rsp } from "./assembly";
 
 
 export type S = Array<GlobalDefinition>;
 export type GlobalDefinition = VarDecl | Function;
-export type BlockBody = Array<VarDecl | Assign | Print | Return>;
 
-
+export class BlockBody {
+    body: Array<VarDecl | Assign | Print | Return | BlockBody>;
+    constructor({ body }: {
+        body: Array<VarDecl | Assign | Print | Return>;
+    }) {
+        this.body = body;
+    }
+    forEach(fn: (_: VarDecl | Assign | Print | Return | BlockBody) => void) {
+        return this.body.forEach(fn);
+    }
+    push(stmt: VarDecl | Assign | Print | Return | BlockBody) {
+        this.body.push(stmt);
+    }
+    setupCompileContext(assembly: Assembly, root: boolean = false) {
+        if (root) {
+            assembly.setupCompileContext();
+        }
+        assembly.getCompileContext().enterBlock();
+        this.body.filter(stmt => {
+            if (stmt instanceof BlockBody || stmt instanceof VarDecl) return true;
+            return false;
+        }).forEach(stmt => {
+            stmt = stmt as (BlockBody | VarDecl);
+            stmt.setupCompileContext(assembly);
+        })
+        assembly.getCompileContext().leaveBlock();
+    }
+    toAssembly(assembly: Assembly): INS[] {
+        assembly.getCompileContext().enterBlock();
+        let ins: INS[] = [];
+        for (let stmt of this.body) {
+            if (stmt instanceof Return) {
+                // return 之后的语句不执行
+                ins.push(...stmt.toAssembly(assembly));
+                break;
+            }
+            ins.push(...stmt.toAssembly(assembly));
+        }
+        assembly.getCompileContext().leaveBlock();
+        return ins;
+    }
+}
 
 export class Function {
     functionName: string;
@@ -32,11 +72,11 @@ export class Function {
     }
     public toAssembly(assembly: Assembly): INS[] {
         const ins: INS[] = [];
-
-        this.blockBody.forEach(stmt => {
-            ins.push(...stmt.toAssembly(assembly));
-        })
-        assembly.appendFunction(this.functionName, ins, this.global);
+        // 初始化编译环境：变量声明在栈中的位置
+        this.blockBody.setupCompileContext(assembly, true);
+        ins.push(...this.blockBody.toAssembly(assembly));
+        assembly.appendFunction(this.functionName, ins, assembly.getCompileContext().slotSum, this.global);
+        assembly.removeCompileContext();
         return [];
     }
     public getStringLiterals(): string[] {
@@ -94,7 +134,12 @@ export class VarDecl {
     }
     public toAssembly(assembly: Assembly): INS[] {
         if (!this.global) {
-            return [];
+            const compileContext = assembly.getCompileContext();
+            let ans: INS[] = [];
+            for (let identifier of this.identifiers) {
+                ans.push(I('movq', '$0', compileContext.getVariablePos(identifier))); // 默认初始化为 0
+            }
+            return ans;
         } else {
             // 全局变量
             let type = "";
@@ -109,8 +154,16 @@ export class VarDecl {
             return [];
         }
     }
-    public getStringLiterals(): string[] {
-        return [];
+    setupCompileContext(assembly: Assembly) {
+        const compileContext = assembly.getCompileContext();
+        let size = 0;
+        switch (this.type) {
+            case "int":
+                size = 8;
+        }
+        for (let identifier of this.identifiers) {
+            compileContext.findVariable(identifier, size);
+        }
     }
 }
 export class Assign {
@@ -131,8 +184,9 @@ export class Assign {
         const stackState = {
             num: 0,
         }
-        ans.push(...this.expr.getTOSCAAssembly(stackState));
-        ans.push(I('popq', `${this.identifier}(%rip)`))
+        const compileContext = assembly.getCompileContext();
+        ans.push(...this.expr.getTOSCAAssembly(stackState, compileContext));
+        ans.push(I('popq', compileContext.getVariablePos(this.identifier)));
         return ans;
     }
     public getStringLiterals(): string[] {
@@ -187,7 +241,8 @@ export class Print {
                 const stackState = {
                     num: 0,
                 }
-                ans.push(...argument.getTOSCAAssembly(stackState));
+                const compileContext = assembly.getCompileContext();
+                ans.push(...argument.getTOSCAAssembly(stackState, compileContext));
                 ans.push(I('popq', rsi));
                 ans.push(I('leaq', assembly.getStringLiteralPos('"%d\n"'), rdi));
                 ans.push(I('xorb', al, al));
@@ -218,7 +273,8 @@ export class Return {
 
     public toAssembly(assembly: Assembly): INS[] {
         let ans: INS[] = [];
-        ans.push(...this.e.getTOSCAAssembly({ num: 0 }));
+        const compileContext = assembly.getCompileContext();
+        ans.push(...this.e.getTOSCAAssembly({ num: 0 }, compileContext));
         ans.push(I('popq', rax));
         ans.push(I('retq'));
         return ans;
@@ -259,11 +315,11 @@ export class AdditiveExpression {
     public getAssembly(): string {
         throw new Error("");
     }
-    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+    public getTOSCAAssembly(stackState: { num: number }, compileContext: CompileContext): INS[] {
         let ans: INS[] = [];
         if (this.e2) {
-            ans.push(...this.e2.getTOSCAAssembly(stackState));
-            ans.push(...this.e1.getTOSCAAssembly(stackState));
+            ans.push(...this.e2.getTOSCAAssembly(stackState, compileContext));
+            ans.push(...this.e1.getTOSCAAssembly(stackState, compileContext));
             if (stackState.num < 2) {
                 throw new Error("[AdditiveExpression] getTOSCAAssembly error");
             }
@@ -280,7 +336,7 @@ export class AdditiveExpression {
             }
             ans.push(I('pushq', r10));
         } else {
-            ans.push(...this.e1.getTOSCAAssembly(stackState));
+            ans.push(...this.e1.getTOSCAAssembly(stackState, compileContext));
         }
         return ans;
     }
@@ -318,11 +374,11 @@ export class MultiplicativeExpression {
         }
         return this.e1.getValue(ctx);
     }
-    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+    public getTOSCAAssembly(stackState: { num: number }, compileContext: CompileContext): INS[] {
         let ans: INS[] = [];
         if (this.e2) {
-            ans.push(...this.e2.getTOSCAAssembly(stackState));
-            ans.push(...this.e1.getTOSCAAssembly(stackState));
+            ans.push(...this.e2.getTOSCAAssembly(stackState, compileContext));
+            ans.push(...this.e1.getTOSCAAssembly(stackState, compileContext));
             if (stackState.num < 2) {
                 throw new Error("[MultiplicativeExpression] getTOSCAAssembly error");
             }
@@ -354,7 +410,7 @@ export class MultiplicativeExpression {
                     break;
             }
         } else {
-            ans.push(...this.e1.getTOSCAAssembly(stackState));
+            ans.push(...this.e1.getTOSCAAssembly(stackState, compileContext));
         }
         return ans;
     }
@@ -387,8 +443,8 @@ export class UnaryExpression {
         }
         return this.e1.getValue(ctx);
     }
-    public getTOSCAAssembly(stackState: { num: number }): INS[] {
-        let ans: INS[] = this.e1.getTOSCAAssembly(stackState);
+    public getTOSCAAssembly(stackState: { num: number }, compileContext: CompileContext): INS[] {
+        let ans: INS[] = this.e1.getTOSCAAssembly(stackState, compileContext);
         if (this.opt) {
             switch (this.opt) {
                 case "-":
@@ -434,16 +490,16 @@ export class PrimaryExpression {
         }
         throw new Error("[PrimaryExpression] getValue")
     }
-    public getTOSCAAssembly(stackState: { num: number }): INS[] {
+    public getTOSCAAssembly(stackState: { num: number }, compileContext: CompileContext): INS[] {
         let ans: INS[] = [];
         if (this.e1) {
-            ans.push(...this.e1.getTOSCAAssembly(stackState));
+            ans.push(...this.e1.getTOSCAAssembly(stackState, compileContext));
         } else if (!isNaN(this.val as any)) {
             stackState.num++;
-            ans.push(I('pushq', `$${this.val}`))
+            ans.push(I('pushq', `$${this.val}`));
         } else if (this.identifier) {
             stackState.num++;
-            ans.push(I('pushq', `${this.identifier}(%rip)`))
+            ans.push(I('pushq', compileContext.getVariablePos(this.identifier)));
         }
         return ans;
     }

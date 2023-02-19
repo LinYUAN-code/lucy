@@ -73,7 +73,13 @@ test("test assembly2", () => {
             print("hello World\n",a+b);
         }
         function main(): int {
+            int a;
+            int b;
+            a = 10;
+            b = 20;
             print("main\n");
+            print(a);
+            print(b);
             return 0;
         }
     `)

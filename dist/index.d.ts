@@ -47,6 +47,9 @@ declare class Lexer {
     remainString(): string;
     next(): Tocken;
     pop(): Tocken;
+    nextNotEmptyTerminal(): Tocken;
+    nextNotEmpty(step: number): Tocken;
+    popNotEmptyTerminal(): Tocken;
     isTerminal(str: string): boolean;
     splitDerivation(str: string): Array<NonTerminal | Terminal>;
     getNewNonTerminal(nonTerminal: string): string;

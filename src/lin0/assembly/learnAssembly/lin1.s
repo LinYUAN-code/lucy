@@ -4,57 +4,56 @@
     .global _main
 _main:
     pushq    %rbp
-    pushq    $5
-    pushq    $10
-    popq    %r10
-    popq    %r11
-    pushq    %rdx
+    movq    %rsp, %rbp
+    subq    $16, %rsp
+    movq    $5, -8(%rbp)
+    movq    $10, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    movq    %rdx, -8(%rbp)
     movq    %r10, %rax
     cqto    
     idivq    %r11
-    popq    %rdx
-    pushq    %rax
-    popq    %rsi
+    movq    -8(%rbp), %rdx
+    movq    %rax, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    $5
-    pushq    $10
-    popq    %r10
-    popq    %r11
-    pushq    %rdx
-    movq    %r10, %rax
-    cqto    
-    idivq    %r11
-    movq    %rdx, %r11
-    popq    %rdx
-    pushq    %r11
-    popq    %rsi
-    leaq    L.str.0(%rip), %rdi
-    xorb    %al, %al
-    callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    $2
-    pushq    $3
-    popq    %r10
-    popq    %r11
-    pushq    %rdx
+    movq    $5, -8(%rbp)
+    movq    $10, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    movq    %rdx, -8(%rbp)
     movq    %r10, %rax
     cqto    
     idivq    %r11
     movq    %rdx, %r11
-    popq    %rdx
-    pushq    %r11
-    popq    %rsi
+    movq    -8(%rbp), %rdx
+    movq    %r11, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
+    movq    $2, -8(%rbp)
+    movq    $3, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    movq    %rdx, -8(%rbp)
+    movq    %r10, %rax
+    cqto    
+    idivq    %r11
+    movq    %rdx, %r11
+    movq    -8(%rbp), %rdx
+    movq    %r11, -8(%rbp)
+    movq    -8(%rbp), %rsi
+    leaq    L.str.0(%rip), %rdi
+    xorb    %al, %al
+    callq    _printf
+    movq    $0, -8(%rbp)
+    movq    -8(%rbp), %rax
+    addq    $16, %rsp
     popq    %rbp
-    pushq    $0
-    popq    %rax
     retq    
     .section	__TEXT, __cstring
 L.str.0:    .asciz "%d\n"

@@ -1,7 +1,7 @@
 import { Tocken } from "@/types/type";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import { Lexer } from "..";
-import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return } from "./types";
+import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return, FunctionCall } from "./types";
 
 let global = false;
 const terminals: Array<[string, RegExp]> = [
@@ -24,7 +24,7 @@ const terminals: Array<[string, RegExp]> = [
     ["print", /^print/],
     ["string", /^"[^"]*"/],
     ["function", /^function/],
-    ["integer", /^(([1-9]*[0-9])|([0-9]))/],
+    ["integer", /^(([1-9][0-9]*)|([0-9]))/],
     ["identifier", /^[_a-zA-Z][a-zA-Z0-9]*/],
     ["whiteSpace", /^\s/],
 ]
@@ -84,7 +84,14 @@ export default class Parser {
                     res.push(stmt);
                     break;
                 case "identifier":
-                    res.push(this.parse_Assign());
+                    switch (this.lexer.nextNotEmpty(2).tocken) {
+                        case "=":
+                            res.push(this.parse_Assign());
+                            break;
+                        case "(":
+                            res.push(this.parse_FunctionCall());
+                            break;
+                    }
                     break;
                 case "print":
                     res.push(this.parse_Print());
@@ -105,6 +112,17 @@ export default class Parser {
         return new Return({
             e
         });
+    }
+    parse_FunctionCall(): FunctionCall {
+        let functionNameTocken = this.expect("identifier", "parse_FunctionCall");
+        this.expect("(", "parse_FunctionCall");
+        let in_arguments = this.parse_Arguments();
+        this.expect(")", "parse_FunctionCall");
+        this.expect(";", "parse_FunctionCall")
+        return new FunctionCall({
+            functionName: functionNameTocken.origin,
+            in_arguments
+        })
     }
     parse_FunctionArgumentDefinition(): FunctionArgumentDefinition {
         let tocken = this.lexer.nextNotEmptyTerminal();
@@ -190,15 +208,15 @@ export default class Parser {
     }
     parse_Arguments(): Arguments {
         let res: Arguments = new Arguments({
-            val: []
+            vals: []
         })
         let tocken = this.lexer.nextNotEmptyTerminal();
         if (tocken.tocken === "string") {
-            res.val.push(tocken.origin);
+            res.vals.push(tocken.origin);
             this.lexer.popNotEmptyTerminal();
         } else {
             let e1 = this.parse_E();
-            res.val.push(e1);
+            res.vals.push(e1);
         }
         while (true) {
             let tocken = this.lexer.nextNotEmptyTerminal();
@@ -206,11 +224,11 @@ export default class Parser {
             this.expect(",", "parse_Arguments");
             tocken = this.lexer.nextNotEmptyTerminal();
             if (tocken.tocken === "string") {
-                res.val.push(tocken.origin);
+                res.vals.push(tocken.origin);
                 this.lexer.popNotEmptyTerminal();
             } else {
                 let e1 = this.parse_E();
-                res.val.push(e1);
+                res.vals.push(e1);
             }
         }
         return res;
@@ -283,9 +301,18 @@ export default class Parser {
         let tocken = this.lexer.popNotEmptyTerminal();
         switch (tocken.tocken) {
             case "identifier":
-                return new PrimaryExpression({
-                    identifier: tocken.origin
-                })
+                switch (this.lexer.nextNotEmpty(2).tocken) {
+                    case "(":
+                        const functionCall = this.parse_FunctionCall();
+                        functionCall.needPushToStack = true;
+                        return new PrimaryExpression({
+                            functionCall,
+                        });
+                    default:
+                        return new PrimaryExpression({
+                            identifier: tocken.origin
+                        })
+                }
             case "integer":
                 return new PrimaryExpression({
                     val: tocken.origin

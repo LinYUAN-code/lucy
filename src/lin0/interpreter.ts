@@ -22,7 +22,6 @@ export default class Interpreter {
     toAssembly(code: string) {
         let globalDefinitions = this.parser.parse(code);
         let assembly = new Assembly();
-
         globalDefinitions.forEach(definition => {
             definition.toAssembly(assembly);
         })

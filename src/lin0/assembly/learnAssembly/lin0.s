@@ -7,130 +7,130 @@ d:  .quad   0x0
     .text
     .global _main
 _main:
-    pushq    $2
-    pushq    $2
-    popq    %r10
-    popq    %r11
-    addq    %r11, %r10
-    pushq    %r10
-    pushq    $2
-    popq    %r10
-    popq    %r11
-    imulq    %r11, %r10
-    pushq    %r10
-    pushq    $1
-    popq    %r10
-    popq    %r11
-    addq    %r11, %r10
-    pushq    %r10
-    popq    a(%rip)
-    pushq    $5
-    popq    b(%rip)
-    pushq    $10
-    popq    c(%rip)
-    pushq    d(%rip)
-    pushq    c(%rip)
-    popq    %r10
-    popq    %r11
-    addq    %r11, %r10
-    pushq    %r10
-    popq    d(%rip)
     pushq    %rbp
-    pushq    $5
-    pushq    c(%rip)
-    popq    %r10
-    popq    %r11
-    pushq    %rdx
+    movq    %rsp, %rbp
+    subq    $32, %rsp
+    movq    $2, -8(%rbp)
+    movq    $2, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    addq    %r11, %r10
+    movq    %r10, -8(%rbp)
+    movq    $2, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    imulq    %r11, %r10
+    movq    %r10, -8(%rbp)
+    movq    $1, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    addq    %r11, %r10
+    movq    %r10, -8(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, a(%rip)
+    movq    $5, -8(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, b(%rip)
+    movq    $10, -8(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, c(%rip)
+    movq    d(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    c(%rip), %r9
+    movq    %r9, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    addq    %r11, %r10
+    movq    %r10, -8(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, d(%rip)
+    movq    $5, -8(%rbp)
+    movq    c(%rip), %r9
+    movq    %r9, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    movq    %rdx, -8(%rbp)
     movq    %r10, %rax
     cqto    
     idivq    %r11
-    popq    %rdx
-    pushq    %rax
-    popq    %rsi
+    movq    -8(%rbp), %rdx
+    movq    %rax, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
     leaq    L.str.1(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    a(%rip)
-    popq    %rsi
+    movq    a(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    a(%rip)
-    popq    %rsi
+    movq    a(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    b(%rip)
-    popq    %rsi
+    movq    b(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    c(%rip)
-    popq    %rsi
+    movq    c(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    d(%rip)
-    popq    %rsi
+    movq    d(%rip), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    $4
-    pushq    $10
-    popq    %r10
-    popq    %r11
+    movq    $4, -8(%rbp)
+    movq    $10, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
     imulq    %r11, %r10
-    pushq    %r10
-    pushq    $5
-    pushq    a(%rip)
-    popq    %r10
-    popq    %r11
+    movq    %r10, -8(%rbp)
+    movq    $5, -16(%rbp)
+    movq    a(%rip), %r9
+    movq    %r9, -24(%rbp)
+    movq    -24(%rbp), %r10
+    movq    -16(%rbp), %r11
     subq    %r11, %r10
-    pushq    %r10
-    popq    %r10
-    popq    %r11
+    movq    %r10, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
     addq    %r11, %r10
-    pushq    %r10
-    popq    %rsi
+    movq    %r10, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    popq    %rbp
-    pushq    %rbp
-    pushq    $2
-    pushq    $10
-    popq    %r10
-    popq    %r11
-    pushq    %rdx
+    movq    $2, -8(%rbp)
+    movq    $10, -16(%rbp)
+    movq    -16(%rbp), %r10
+    movq    -8(%rbp), %r11
+    movq    %rdx, -8(%rbp)
     movq    %r10, %rax
     cqto    
     idivq    %r11
-    popq    %rdx
-    pushq    %rax
-    popq    %rsi
+    movq    -8(%rbp), %rdx
+    movq    %rax, -8(%rbp)
+    movq    -8(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
+    movq    $0, -8(%rbp)
+    movq    -8(%rbp), %rax
+    addq    $32, %rsp
     popq    %rbp
-    pushq    $0
-    popq    %rax
     retq    
     .section	__TEXT, __cstring
 L.str.0:    .asciz "%d\n"

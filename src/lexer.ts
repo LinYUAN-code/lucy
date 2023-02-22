@@ -60,6 +60,15 @@ export default class Lexer {
       this.currentColumn += tocken.origin.length;
     }
   }
+  public nextNotEmpty(step: number): Tocken {
+    const back = this.currentColumn;
+    for (let i = 0; i < step - 1; i++) {
+      this.popNotEmptyTerminal();
+    }
+    const tocken = this.nextNotEmptyTerminal();
+    this.currentColumn = back;
+    return tocken;
+  }
   public popNotEmptyTerminal(): Tocken {
     const tocken = this.nextNotEmptyTerminal();
     if (tocken.tocken !== EndingCharacter) {

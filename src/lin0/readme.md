@@ -52,6 +52,8 @@ Function => function global(可选) identidier(FunctionArgumentDefinition): Basi
 
 BlockBody => VarDecl ';' BlockBody | Assign BlockBody | Print BlockBody
 
+FunctionCall => identifier( Arguments )
+
 Return => return E
 
 (E =>
@@ -83,7 +85,8 @@ PrimaryExpression |
 PrimaryExpression =>
 T_IntConstant |
 T_Identifier |
-( AdditiveExpression )
+( AdditiveExpression ) |
+FunctionCall
 
 VarDecl => T_Int T_Identifier | VarDecl ',' T_Identifier
 =>
@@ -152,3 +155,8 @@ if (needSpace) {
                 subq    $8, %rsp`;
 }
 ```
+
+超级坑点：
+
+进行库函数调用的时候栈需要进行 16 字节对齐！！！！！否则会 segmentFault
+rsp 寄存器内的地址值加 8 得是 16 的倍数 -- 奇怪的设定增加了

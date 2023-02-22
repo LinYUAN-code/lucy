@@ -14,14 +14,63 @@ type Function = {
     global: boolean;
     stackSize: number;
 }
+// 栈区域分配
+/*
+    0. rbp
+    1. 局部变量区域 slotSum
+    2. 操作数栈区域 optStackSize
+
+    attention: (1. + 2.) % 16  === 0
+*/
 export class CompileContext {
     variableTable: Map<string, number>;
     blockDeep: number;
-    slotSum: number;
+    slotSum: number; //局部变量的大小
+    optStackSize: number; //计算栈的大小
+    optStackNum: number;
+    tmpOptSize: number;
     constructor() {
         this.blockDeep = 0;
         this.slotSum = 0;
+        this.optStackNum = 0;
+        this.optStackSize = 0;
+        this.tmpOptSize = 0;
         this.variableTable = new Map();
+    }
+    countOptPush(byte: number) {
+        this.tmpOptSize += byte;
+        this.optStackSize = Math.max(this.tmpOptSize, this.optStackSize);
+    }
+    countOptPop(byte: number) {
+        this.tmpOptSize -= byte;
+    }
+    optPush(val: string): INS[] {
+        this.optStackNum += 8;
+        // 注意movq 不能操作内存到内存
+        let ans = [];
+        // 注意movq 不能操作内存到内存
+        if (/\([^)]*\)/.exec(val)) {
+            ans.push(I("movq", val, r9));
+            ans.push(I("movq", r9, `-${this.slotSum + this.optStackNum}(%rbp)`));
+        } else {
+            ans.push(I("movq", val, `-${this.slotSum + this.optStackNum}(%rbp)`));
+        }
+        return ans;
+    }
+    optPop(target: string): INS[] {
+        if (this.optStackNum <= 0) {
+            throw new Error("[optPop] optStackNum is empty");
+        }
+        let ans = [];
+        // 注意movq 不能操作内存到内存
+        if (/\([^)]*\)/.exec(target)) {
+            ans.push(I("movq", `-${this.slotSum + this.optStackNum}(%rbp)`, r9));
+            ans.push(I("movq", r9, target));
+        } else {
+            ans.push(I("movq", `-${this.slotSum + this.optStackNum}(%rbp)`, target));
+        }
+        this.optStackNum -= 8;
+        return ans;
     }
     enterBlock() {
         this.blockDeep++;
@@ -30,18 +79,24 @@ export class CompileContext {
         this.blockDeep--;
     }
     findVariable(identifier: string, size: number) {
-        console.log(`${identifier}.${this.blockDeep}`);
         this.slotSum += size;
         this.variableTable.set(`${identifier}.${this.blockDeep}`, this.slotSum);
     }
     getVariablePos(identifier: string): string {
-        const key = `${identifier}.${this.blockDeep}`;
-        console.log("get", key);
-        if (this.variableTable.has(key)) {
-            return `-${this.variableTable.get(key)!}(%rbp)`;
-        } else {
-            return `${identifier}(%rip)`;
+        // 逐级查找
+        for (let i = this.blockDeep; i >= 0; i--) {
+            const key = `${identifier}.${i}`;
+            if (this.variableTable.has(key)) {
+                return `-${this.variableTable.get(key)!}(%rbp)`;
+            }
         }
+        return `${identifier}(%rip)`;
+    }
+    getStackSize() {
+        if ((this.slotSum + this.optStackSize) % 16) {
+            return this.slotSum + this.optStackSize + 8;
+        }
+        return this.slotSum + this.optStackSize;
     }
 }
 
@@ -54,6 +109,8 @@ export class Assembly {
     stringLiteralIndex: number;
     stringLiteralPrefix: string;
     compileContext?: CompileContext;
+    jumpTagPrefix: string;
+    jumpTagIndex: number;
     constructor() {
         this.globalData = [];
         this.functions = [];
@@ -61,12 +118,17 @@ export class Assembly {
         this.headers = "# lin0 assembly code\n";
         this.stringLiteralIndex = 0;
         this.stringLiteralPrefix = "L.str.";
+        this.jumpTagIndex = 0;
+        this.jumpTagPrefix = "LBB.";
     }
     setupCompileContext() {
         this.compileContext = new CompileContext();
     }
     removeCompileContext() {
         this.compileContext = undefined;
+    }
+    getNewJumpTag(): string {
+        return `${this.jumpTagPrefix}${this.jumpTagIndex++}`;
     }
     getCompileContext(): CompileContext {
         if (!this.compileContext) {
@@ -116,11 +178,13 @@ export class Assembly {
             ans += `${INS_SPACE}.global _${method.methodName}\n`;
         }
         ans += `_${method.methodName}:\n`;
-        ans += I("movq", rsp, rbx).toRealInstrument();
+        ans += I("pushq", rbp).toRealInstrument();
+        ans += I("movq", rsp, rbp).toRealInstrument();
         ans += I("subq", `$${method.stackSize}`, rsp).toRealInstrument();
         for (let ins of method.methodBody) {
             if (ins.ins === "retq") {
                 ans += I("addq", `$${method.stackSize}`, rsp).toRealInstrument();
+                ans += I("popq", rbp).toRealInstrument();
             }
             ans += ins.toRealInstrument();
         }
@@ -143,12 +207,27 @@ export class Assembly {
     toFile(filePath: string) {
         const asm = this.toString();
     }
+    libFunctionCall(functionName: string): INS[] {
+        let ans: INS[] = [];
+        // check rsp%16 === 8
+        ans.push(I("test", spl, "$0x0F"));
+        const jumpTag = this.getNewJumpTag();
+        ans.push(I("jnz", jumpTag));
+        ans.push(I("pushq", "$0"));
+        ans.push(new INS({
+            ins: "callq",
+            o1: functionName,
+            label: jumpTag
+        }))
+        ans.push(I("callq", functionName));
+        return ans;
+    }
 }
 
 
 const REGISTERS = [
     "rax", "rbx", "rcx", "rdx", "rdi", "rsi", "rbp", "rsp",
-    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "al"
+    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "al", "spl"
 ]
 
 export const rax = "rax";
@@ -167,24 +246,29 @@ export const r12 = "r12";
 export const r13 = "r13";
 export const r14 = "r14";
 export const r15 = "r15";
-export const al = "al";
+export const al = "al"; //rax 寄存器的低八位
+export const spl = "spl"; //rsp 寄存器的低八位
+export const ecx = "ecx"; //rcx 寄存器的低32位
 
 
 export class INS {
+    label?: string;
     ins: string;
     o1?: string;
     o2?: string;
     o3?: string;
-    constructor({ ins, o1, o2, o3 }: {
+    constructor({ ins, o1, o2, o3, label }: {
         ins: string;
         o1?: string;
         o2?: string;
         o3?: string;
+        label?: string;
     }) {
         this.ins = ins;
         this.o1 = o1 ? SAFE_NAME(o1) : "";
         this.o2 = o2 ? SAFE_NAME(o2) : "";
         this.o3 = o3 ? SAFE_NAME(o3) : "";
+        this.label = label;
     }
     toRealInstrument(): string {
         let ans = `${INS_SPACE}${this.ins}${INS_SPACE}`;

@@ -1,14 +1,42 @@
 /* eslint-disable quotes */
 
-import { al, Assembly, CompileContext, I, INS, r10, r11, r8, r9, rax, rbp, rbx, rcx, rdi, rdx, rsi, rsp } from "./assembly";
+import { ah, al, Assembly, ax, CompileContext, I, INS, r10, r11, r8, r9, rax, rbp, rbx, rcx, rdi, rdx, rsi, rsp } from "./assembly";
 
 export const ParamRegisters = [rdi, rsi, rdx, rcx, r8, r9];
 export type S = Array<GlobalDefinition>;
 export type GlobalDefinition = VarDecl | Function;
 export const NumberSIZE = 8;
 
-type BlockStmt = VarDecl | Assign | Print | Return | BlockBody | FunctionCall;
+type BlockStmt = VarDecl | Assign | Print | Return | BlockBody | FunctionCall | IfStmt;
 type StringLiteral = string;
+export type E = CompareExpression;
+
+export class IfStmt {
+    expr: E;
+    block1: BlockBody;
+    block2?: BlockBody | IfStmt;
+    constructor({ expr, block1, block2 }: {
+        expr: E;
+        block1: BlockBody;
+        block2?: BlockBody | IfStmt;
+    }) {
+        this.expr = expr;
+        this.block1 = block1;
+        this.block2 = block2;
+    }
+    public toAssembly(assembly: Assembly): INS[] {
+        const ins: INS[] = [];
+        const compileContext = assembly.getCompileContext();
+
+        return ins;
+    }
+    setupCompileContext(assembly: Assembly) {
+        const compileContext = assembly.getCompileContext();
+        this.expr.setupCompileContext(assembly);
+        this.block1.setupCompileContext(assembly);
+
+    }
+}
 export class BlockBody {
     body: Array<BlockStmt>;
     constructor({ body }: {
@@ -288,7 +316,7 @@ export class Arguments {
     setupCompileContext(assembly: Assembly) {
         const compileContext = assembly.getCompileContext();
         for (let argument of this.vals) {
-            if (argument instanceof AdditiveExpression) {
+            if (argument instanceof CompareExpression) {
                 argument.setupCompileContext(assembly);
                 compileContext.countOptPop(NumberSIZE);
             }
@@ -316,7 +344,7 @@ export class Print {
                 ans.push(I('xorb', al, al));
                 ans.push(I('callq', '_printf'));
 
-            } else if ((argument as any) instanceof AdditiveExpression) {
+            } else if ((argument as any) instanceof CompareExpression) {
                 ans.push(...argument.getTOSCAAssembly(assembly));
                 ans.push(...compileContext.optPop(rsi));
                 ans.push(I('leaq', assembly.getStringLiteralPos('"%d\n"'), rdi));
@@ -367,8 +395,142 @@ export class Return {
     }
 }
 
-export type E = AdditiveExpression;
 
+
+export class CompareExpression {
+    e1: CompareExpression | AdditiveExpression;
+    e2?: AdditiveExpression;
+    opt?: string;
+    constructor({ e1, e2, opt }: {
+        e1: CompareExpression | AdditiveExpression;
+        e2?: AdditiveExpression;
+        opt?: string;
+    }) {
+        this.e1 = e1;
+        this.e2 = e2;
+        this.opt = opt;
+    }
+    public getValue(ctx: Context): number {
+        throw new Error("[EqualityExpression] getValue");
+    }
+    public getAssembly(): string {
+        throw new Error("");
+    }
+    public getTOSCAAssembly(assembly: Assembly): INS[] {
+        let ans: INS[] = [];
+        const compileContext = assembly.getCompileContext();
+        if (this.e2) {
+            ans.push(...this.e2.getTOSCAAssembly(assembly));
+            ans.push(...this.e1.getTOSCAAssembly(assembly));
+            ans.push(...compileContext.optPop(r10));
+            ans.push(...compileContext.optPop(r11));
+            // ["===", "==", "!=",">", ">=", "<", "<="]
+            switch (this.opt) {
+                case "==":
+                // TODO!: 完善类型系统之后去做 like 比较
+                case "===":
+                    // 严格比较
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$6', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+                    break;
+                case ">":
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$7', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$6', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+
+                    ans.push(...compileContext.optPop(r11));
+                    ans.push(...compileContext.optPop(r10));
+                    ans.push(I("xor", '$1', r11));
+                    ans.push(I("xor", '$1', r10));
+                    ans.push(I("and", r11, r10));
+                    ans.push(...compileContext.optPush(r10));
+                    break;
+                case ">=":
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$7', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(I("xor", '$1', al));
+                    ans.push(...compileContext.optPush(rax));
+                    break;
+                case "<":
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$7', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+                    break;
+                case "<=":
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$7', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$6', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(...compileContext.optPush(rax));
+
+                    ans.push(...compileContext.optPop(r11));
+                    ans.push(...compileContext.optPop(r10));
+                    ans.push(I("xor", r11, r10));
+                    ans.push(...compileContext.optPush(r10));
+                    break;
+                case "!=":
+                    // 严格比较
+                    ans.push(I("xorq", rax, rax));
+                    ans.push(I("cmp", r11, r10));
+                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                    ans.push(I("shr", '$6', ah));
+                    ans.push(I("and", '$1', ah));
+                    ans.push(I("shr", '$8', ax));
+                    ans.push(I("xor", '$1', al));
+                    ans.push(...compileContext.optPush(rax));
+                    break;
+            }
+        } else {
+            ans.push(...this.e1.getTOSCAAssembly(assembly));
+        }
+        return ans;
+    }
+    setupCompileContext(assembly: Assembly) {
+        const compileContext = assembly.getCompileContext();
+        if (this.e2) {
+            this.e2.setupCompileContext(assembly);
+            this.e1.setupCompileContext(assembly);
+            compileContext.countOptPop(NumberSIZE);
+        } else {
+            this.e1.setupCompileContext(assembly);
+        }
+    }
+}
 export class AdditiveExpression {
     e1: AdditiveExpression | MultiplicativeExpression;
     e2?: MultiplicativeExpression;
@@ -545,12 +707,12 @@ export class UnaryExpression {
 }
 
 export class PrimaryExpression {
-    e1?: AdditiveExpression;
+    e1?: E;
     val?: number;
     identifier?: string;
     functionCall?: FunctionCall;
     constructor({ e1, val, identifier, functionCall }: {
-        e1?: AdditiveExpression;
+        e1?: E;
         val?: string;
         identifier?: string;
         functionCall?: FunctionCall;

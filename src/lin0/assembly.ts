@@ -207,27 +207,12 @@ export class Assembly {
     toFile(filePath: string) {
         const asm = this.toString();
     }
-    libFunctionCall(functionName: string): INS[] {
-        let ans: INS[] = [];
-        // check rsp%16 === 8
-        ans.push(I("test", spl, "$0x0F"));
-        const jumpTag = this.getNewJumpTag();
-        ans.push(I("jnz", jumpTag));
-        ans.push(I("pushq", "$0"));
-        ans.push(new INS({
-            ins: "callq",
-            o1: functionName,
-            label: jumpTag
-        }))
-        ans.push(I("callq", functionName));
-        return ans;
-    }
 }
 
 
 const REGISTERS = [
     "rax", "rbx", "rcx", "rdx", "rdi", "rsi", "rbp", "rsp",
-    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "al", "spl"
+    "r8", "r9", "r10", "r11", "r12", "r13", "r14", "r15", "al", "ah", "ax", "spl"
 ]
 
 export const rax = "rax";
@@ -247,6 +232,8 @@ export const r13 = "r13";
 export const r14 = "r14";
 export const r15 = "r15";
 export const al = "al"; //rax 寄存器的低八位
+export const ah = "ah";
+export const ax = "ax"; //rax 低16位
 export const spl = "spl"; //rsp 寄存器的低八位
 export const ecx = "ecx"; //rcx 寄存器的低32位
 

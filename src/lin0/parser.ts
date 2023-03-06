@@ -1,7 +1,7 @@
 import { Tocken } from "@/types/type";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import { Lexer } from "..";
-import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return, FunctionCall } from "./types";
+import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return, FunctionCall, IfStmt, CompareExpression } from "./types";
 
 let global = false;
 const terminals: Array<[string, RegExp]> = [
@@ -12,12 +12,21 @@ const terminals: Array<[string, RegExp]> = [
     ["%", /^\%/],
     ["(", /^\(/],
     [")", /^\)/],
+    ["===", /^===/],
+    ["==", /^==/],
     ["=", /^=/],
     [",", /^,/],
     [";", /^;/],
     ["{", /^{/],
     ["}", /^}/],
     [":", /^:/],
+    [">=", /^\>\=/],
+    ["<=", /^\<\=/],
+    [">", /^\>/],
+    ["<", /^\</],
+    ["!=", /^\!\=/],
+    ["if", /^if/],
+    ["else", /^else/],
     ["global", /^global/],
     ["return", /^return/],
     ["BasicType", /^int/],
@@ -99,6 +108,9 @@ export default class Parser {
                 case "return":
                     res.push(this.parse_Return());
                     break;
+                case "if":
+                    res.push(this.parse_IfStmt());
+                    break;
                 default:
                     this.expect("}", "parse_BlockBody");
                     return res;
@@ -112,6 +124,38 @@ export default class Parser {
         return new Return({
             e
         });
+    }
+    parse_IfStmt(): IfStmt {
+        this.expect("if", "parse_IFStmt");
+        this.expect("(", "parse_IFStmt");
+        let expr = this.parse_E();
+        this.expect(")", "parse_IFStmt");
+        let block1 = this.parse_BlockBody();
+        let tocken = this.lexer.nextNotEmptyTerminal();
+        if (tocken.tocken === "else") {
+            this.lexer.popNotEmptyTerminal();
+            tocken = this.lexer.nextNotEmptyTerminal();
+            if (tocken.tocken === "{") {
+                return new IfStmt({
+                    expr,
+                    block1,
+                    block2: this.parse_BlockBody(),
+                })
+            } else if (tocken.tocken === "if") {
+                // if
+                return new IfStmt({
+                    expr,
+                    block1,
+                    block2: this.parse_IfStmt(),
+                })
+            }
+            throw new Error("[parse_IFStmt]")
+        } else {
+            return new IfStmt({
+                expr,
+                block1
+            })
+        }
     }
     parse_FunctionCall(): FunctionCall {
         let functionNameTocken = this.expect("identifier", "parse_FunctionCall");
@@ -234,7 +278,30 @@ export default class Parser {
         return res;
     }
     parse_E(): E {
-        return this.parse_AdditiveExpression();
+        return this.parse_CompareExpression();
+    }
+    parse_CompareExpression(): CompareExpression {
+        let e1 = this.parse_AdditiveExpression();
+        let tocken = this.lexer.nextNotEmptyTerminal();
+        let opt = tocken.tocken;
+        if (!["===", "==", "!=", ">", ">=", "<", "<="].includes(opt)) {
+            return new CompareExpression({
+                e1
+            })
+        }
+        let e = new CompareExpression({
+            e1
+        })
+        while (["===", "==", "!=", ">", ">=", "<", "<="].includes(opt)) {
+            this.lexer.popNotEmptyTerminal();
+            e.e2 = this.parse_AdditiveExpression();
+            e.opt = opt;
+            e = new CompareExpression({
+                e1: e,
+            })
+            opt = this.lexer.nextNotEmptyTerminal().tocken;
+        }
+        return e;
     }
     parse_AdditiveExpression(): AdditiveExpression {
         let e1 = this.parse_MultiplicativeExpression();
@@ -258,7 +325,6 @@ export default class Parser {
             opt = this.lexer.nextNotEmptyTerminal().tocken;
         }
         return e;
-
     }
     parse_MultiplicativeExpression(): MultiplicativeExpression {
         let e1 = this.parse_UnaryExpression();
@@ -318,7 +384,7 @@ export default class Parser {
                     val: tocken.origin
                 })
             case "(":
-                let e1 = this.parse_AdditiveExpression();
+                let e1 = this.parse_E();
                 this.expect(")", "parse_PrimaryExpression")
                 return new PrimaryExpression({
                     e1

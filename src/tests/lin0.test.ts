@@ -113,3 +113,48 @@ test("test assembly3", () => {
     fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin3.s"), asm);
 
 })
+
+
+test("test assembly4", () => {
+    const interpreter = new Interpreter();
+    const asm = interpreter.toAssembly(`
+        function main(): int {
+            print("1==1: ",1==1);
+            print("2==1: ",2==1);
+
+            print("1!=2: ",1!=2);
+            print("1!=1: ",1!=1);
+
+            print("1<2: ",1<2);
+            print("1<1: ",1<1);   
+            print("1<=0: ",1<=0);
+            print("1<=1: ",1<=1);  
+
+            print("1>2: ",1>2);
+            print("1>0: ",1>0);   
+            print("1>=7: ",1>=7);
+            print("1>=1: ",1>=1); 
+            return 0;
+        }
+    `)
+    console.log(asm);
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin4.s"), asm);
+
+})
+
+test("test assembly5", () => {
+    const interpreter = new Interpreter();
+    const asm = interpreter.toAssembly(`
+        function main(): int {
+            if(1) {
+                print("work\n");
+            } else {
+                print("play\n");
+            }
+            return 0;
+        }
+    `)
+    console.log(asm);
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin5.s"), asm);
+
+})

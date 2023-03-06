@@ -4,9 +4,9 @@ todo!
 
 - [x] 完成 parser
 - [x] 完成 解释过程
-- [ ] 编译成 three-address code
-- [ ] turn three-address code into AT&T x86_64 assembly
-- [ ] turn AT&T x86_64 assembly into excutable file in mac
+- [skip] 编译成 three-address code
+- [x] turn three-address code into AT&T x86_64 assembly
+- [x] turn AT&T x86_64 assembly into excutable file in mac
 - [ ] turn AT&T x86_64 assembly into excutable file in windows
 
 refs:
@@ -39,8 +39,10 @@ T_Identifier: /^(([1-9]\*[0-9])|([0-9]))/
 T_Print: "print"
 BasicType: "int"
 
-S => Stmt | S Stmt
-Stmt => VarDecl ';' | Assign | Print | Function
+S => GlobalDefinition | S GlobalDefinition
+GlobalDefinition = VarDecl | Function
+BlockStmt = VarDecl | Assign | Print | Return | BlockBody | FunctionCall
+
 VarDecl => BasicType T_Identifier | VarDecl ',' T_Identifier
 Assign => T_Identifier '=' E ';'
 Print => T_Print '(' Arguments ')' ';'
@@ -55,6 +57,8 @@ BlockBody => VarDecl ';' BlockBody | Assign BlockBody | Print BlockBody
 FunctionCall => identifier( Arguments )
 
 Return => return E
+
+IfStmt => if (expr) BlockStmt | if (expr) BlockStmt else (BlockStmt | IfStmt)
 
 (E =>
 E '+' E

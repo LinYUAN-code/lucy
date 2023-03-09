@@ -146,10 +146,14 @@ test("test assembly5", () => {
     const interpreter = new Interpreter();
     const asm = interpreter.toAssembly(`
         function main(): int {
-            if(1) {
+            if(5==3) {
                 print("work\n");
+            } else if(2==1) {
+                print("play1\n");
+            } else if(1==1) {
+                print("play2\n");
             } else {
-                print("play\n");
+                print("play3\n");
             }
             return 0;
         }

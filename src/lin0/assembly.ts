@@ -258,7 +258,11 @@ export class INS {
         this.label = label;
     }
     toRealInstrument(): string {
-        let ans = `${INS_SPACE}${this.ins}${INS_SPACE}`;
+        let ans = "";
+        if (this.label) {
+            ans += `${this.label}:\n`;
+        }
+        ans += `${INS_SPACE}${this.ins}${INS_SPACE}`;
         this.o1 ? ans += `${this.o1}, ` : 0;
         this.o2 ? ans += `${this.o2}, ` : 0;
         this.o3 ? ans += `${this.o3}, ` : 0;
@@ -276,6 +280,16 @@ export function I(ins: string, o1?: string, o2?: string, o3?: string): INS {
         o3
     })
 }
+export function TagI(label: string, ins: string, o1?: string, o2?: string, o3?: string): INS {
+    return new INS({
+        label,
+        ins,
+        o1,
+        o2,
+        o3
+    })
+}
+
 
 
 export function SAFE_NAME(name: string): string {

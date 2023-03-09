@@ -1,6 +1,6 @@
 /* eslint-disable quotes */
 
-import { ah, al, Assembly, ax, CompileContext, I, INS, r10, r11, r8, r9, rax, rbp, rbx, rcx, rdi, rdx, rsi, rsp } from "./assembly";
+import { ah, al, Assembly, ax, CompileContext, I, INS, r10, r11, r8, r9, rax, rbp, rbx, rcx, rdi, rdx, rsi, rsp, TagI } from "./assembly";
 
 export const ParamRegisters = [rdi, rsi, rdx, rcx, r8, r9];
 export type S = Array<GlobalDefinition>;
@@ -27,14 +27,31 @@ export class IfStmt {
     public toAssembly(assembly: Assembly): INS[] {
         const ins: INS[] = [];
         const compileContext = assembly.getCompileContext();
-
+        ins.push(...this.expr.getTOSCAAssembly(assembly));
+        ins.push(...compileContext.optPop(r10))
+        ins.push(I('cmp', '$0', r10));
+        const outerTag = assembly.getNewJumpTag();
+        const tag1 = assembly.getNewJumpTag();
+        if (this.block2) {
+            ins.push(I('je', tag1));   // 不等于0那么跳转
+        } else {
+            ins.push(I('je', outerTag));
+        }
+        ins.push(...this.block1.toAssembly(assembly));
+        ins.push(I('jmp', outerTag));
+        if (this.block2) {
+            ins.push(TagI(tag1, 'nop'));
+            ins.push(...this.block2.toAssembly(assembly));
+        }
+        ins.push(TagI(outerTag, 'nop'));
         return ins;
     }
     setupCompileContext(assembly: Assembly) {
         const compileContext = assembly.getCompileContext();
         this.expr.setupCompileContext(assembly);
+        compileContext.countOptPop(NumberSIZE);
         this.block1.setupCompileContext(assembly);
-
+        this.block2?.setupCompileContext(assembly);
     }
 }
 export class BlockBody {

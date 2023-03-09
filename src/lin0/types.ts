@@ -106,6 +106,7 @@ export class FunctionCall {
     public toAssembly(assembly: Assembly): INS[] {
         const ins: INS[] = [];
         const compileContext = assembly.getCompileContext();
+        compileContext.enterBlock();
         // 传入参数
         ins.push(...this.arguments.toAssembly(assembly));
         // 函数调用
@@ -114,15 +115,18 @@ export class FunctionCall {
         if (this.needPushToStack) {
             ins.push(...compileContext.optPush(rax));
         }
+        compileContext.leaveBlock();
         return ins;
     }
     setupCompileContext(assembly: Assembly) {
         const compileContext = assembly.getCompileContext();
+        compileContext.enterBlock();
         this.arguments.setupCompileContext(assembly);
         if (this.needPushToStack) {
             // TODO! 函数返回值不是8byte的时候
             compileContext.countOptPush(NumberSIZE);
         }
+        compileContext.leaveBlock();
     }
 }
 
@@ -151,6 +155,7 @@ export class Function {
         const ins: INS[] = [];
         // 初始化编译环境：变量声明在栈中的位置
         this.setupCompileContext(assembly);
+        assembly.getCompileContext().resetBlockId();
         // 参数入栈
         ins.push(...this.argumentDefinition.toAssembly(assembly));
         // 函数体执行

@@ -5,14 +5,14 @@ _helloWorld:
     pushq    %rbp
     movq    %rsp, %rbp
     subq    $32, %rsp
-    movq    %rdi, -8(%rbp)
-    movq    %rsi, -16(%rbp)
+    movq    %rdi, a(%rip)
+    movq    %rsi, b(%rip)
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    movq    -16(%rbp), %r9
+    movq    b(%rip), %r9
     movq    %r9, -24(%rbp)
-    movq    -8(%rbp), %r9
+    movq    a(%rip), %r9
     movq    %r9, -32(%rbp)
     movq    -32(%rbp), %r10
     movq    -24(%rbp), %r11

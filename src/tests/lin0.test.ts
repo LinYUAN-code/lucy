@@ -69,8 +69,11 @@ test("test assembly2", () => {
     const asm = interpreter.toAssembly(`
         int a;
         int b;
+        int c;
         function helloWorld(int a,int b): int {
-            print("hello World\n",a+b);
+            c = c + 1;
+            print("hello World\n",a+b,c);
+            return 0;
         }
         function main(): int {
             int a;
@@ -160,5 +163,32 @@ test("test assembly5", () => {
     `)
     console.log(asm);
     fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin5.s"), asm);
+})
 
+test("test assembly6", () => {
+    const interpreter = new Interpreter();
+    const asm = interpreter.toAssembly(`
+        function main(): int {
+            if(5==3) {
+                int a;
+                a = 1;
+                print(a);
+            } else if(2==1) {
+                int a;
+                a = 2;
+                print(a);
+            } else if(1==1) {
+                int a;
+                a = 3;
+                print(a);
+            } else {
+                int a;
+                a = 4;
+                print(a);
+            }
+            return 0;
+        }
+    `)
+    console.log(asm);
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin6.s"), asm);
 })

@@ -24,18 +24,20 @@ type Function = {
 */
 export class CompileContext {
     variableTable: Map<string, number>;
-    blockDeep: number;
+    blockId: number;
+    blockChain: number[];
     slotSum: number; //局部变量的大小
     optStackSize: number; //计算栈的大小
     optStackNum: number;
     tmpOptSize: number;
     constructor() {
-        this.blockDeep = 0;
         this.slotSum = 0;
         this.optStackNum = 0;
         this.optStackSize = 0;
         this.tmpOptSize = 0;
         this.variableTable = new Map();
+        this.blockId = 0;
+        this.blockChain = [];
     }
     countOptPush(byte: number) {
         this.tmpOptSize += byte;
@@ -72,20 +74,24 @@ export class CompileContext {
         this.optStackNum -= 8;
         return ans;
     }
+    resetBlockId() {
+        this.blockId = 0;
+    }
     enterBlock() {
-        this.blockDeep++;
+        this.blockChain.push(this.blockId++);
     }
     leaveBlock() {
-        this.blockDeep--;
+        this.blockChain.pop();
     }
     findVariable(identifier: string, size: number) {
         this.slotSum += size;
-        this.variableTable.set(`${identifier}.${this.blockDeep}`, this.slotSum);
+        this.variableTable.set(`${identifier}.${this.blockChain[this.blockChain.length - 1]}`, this.slotSum);
     }
     getVariablePos(identifier: string): string {
         // 逐级查找
-        for (let i = this.blockDeep; i >= 0; i--) {
-            const key = `${identifier}.${i}`;
+        for (let i = this.blockChain.length - 1; i >= 0; i--) {
+            const blockId = this.blockChain[i];
+            const key = `${identifier}.${blockId}`;
             if (this.variableTable.has(key)) {
                 return `-${this.variableTable.get(key)!}(%rbp)`;
             }

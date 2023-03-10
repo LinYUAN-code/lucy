@@ -1,12 +1,16 @@
 import { Tocken } from "@/types/type";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import { Lexer } from "..";
-import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return, FunctionCall, IfStmt, CompareExpression } from "./types";
+import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, FunctionArgumentDefinition, MultiplicativeExpression, PrimaryExpression, Print, S, GlobalDefinition, UnaryExpression, VarDecl, Variable, Return, FunctionCall, IfStmt, CompareExpression, ForStmt, Break, Continue } from "./types";
 
 let global = false;
 const terminals: Array<[string, RegExp]> = [
     ["-", /^-/],
     ["/", /^\//],
+    ["++", /^\+\+/], //todo!
+    ["+=", /^\+\=/], //todo!
+    ["-=", /^\-\=/], //todo!
+    ["*=", /^\*\=/], //todo!
     ["+", /^\+/],
     ["*", /^\*/],
     ["%", /^\%/],
@@ -26,6 +30,9 @@ const terminals: Array<[string, RegExp]> = [
     ["<", /^\</],
     ["!=", /^\!\=/],
     ["if", /^if/],
+    ["for", /^for/],
+    ["break", /^break/],
+    ["continue", /^continue/],
     ["else", /^else/],
     ["global", /^global/],
     ["return", /^return/],
@@ -111,11 +118,30 @@ export default class Parser {
                 case "if":
                     res.push(this.parse_IfStmt());
                     break;
+                case "for":
+                    res.push(this.parse_ForStmt());
+                    break;
+                case "break":
+                    res.push(this.parse_Break());
+                    break;
+                case "continue":
+                    res.push(this.parse_Continue());
+                    break;
                 default:
                     this.expect("}", "parse_BlockBody");
                     return res;
             }
         }
+    }
+    parse_Break(): Break {
+        this.expect("break", "parse_Break");
+        this.expect(";", "parse_Break");
+        return new Break();
+    }
+    parse_Continue(): Continue {
+        this.expect("continue", "parse_Break");
+        this.expect(";", "parse_Break");
+        return new Continue();
     }
     parse_Return(): Return {
         this.expect("return", "parse_Return");
@@ -124,6 +150,30 @@ export default class Parser {
         return new Return({
             e
         });
+    }
+    parse_ForStmt(): ForStmt {
+        this.expect("for", "parse_ForStmt");
+        this.expect("(", "parse_ForStmt");
+        let varDecl, expr, assign, block;
+        if (!this.predict(";")) {
+            varDecl = this.parse_VarDecl();
+            this.expect(";", "parse_ForStmt");
+        }
+        if (!this.predict(";")) {
+            expr = this.parse_E();
+            this.expect(";", "parse_ForStmt");
+        }
+        if (!this.predict(")")) {
+            assign = this.parse_Assign(false);
+            this.expect(")", "parse_ForStmt");
+        }
+        block = this.parse_BlockBody();
+        return new ForStmt({
+            varDecl,
+            expr,
+            assign,
+            block
+        })
     }
     parse_IfStmt(): IfStmt {
         this.expect("if", "parse_IFStmt");
@@ -214,27 +264,46 @@ export default class Parser {
         let tocken = this.expect("BasicType", "[parse_VarDecl]");
         let varDecl: VarDecl = new VarDecl({
             type: tocken.origin,
-            identifiers: [],
+            decls: [],
             global: global,
         })
-        tocken = this.expect("identifier", "parse_VarDecl");
-        varDecl.identifiers.push(tocken.origin);
+        let identifier, expr;
+        identifier = this.expect("identifier", "parse_VarDecl");
+        if (this.predict("=")) {
+            expr = this.parse_E();
+        }
+        varDecl.decls.push({
+            identifier: identifier.origin,
+            expr
+        })
         while (true) {
             let tocken = this.lexer.nextNotEmptyTerminal();
             if (tocken.tocken !== ",") {
                 break;
             }
             this.lexer.popNotEmptyTerminal();
-            tocken = this.expect("identifier", "parse_VarDecl");
-            varDecl.identifiers.push(tocken.origin);
+            identifier = this.expect("identifier", "parse_VarDecl");
+            if (this.predict("=")) {
+                expr = this.parse_E();
+                varDecl.decls.push({
+                    identifier: identifier.origin,
+                    expr
+                })
+            } else {
+                varDecl.decls.push({
+                    identifier: identifier.origin,
+                });
+            }
         }
         return varDecl;
     }
-    parse_Assign(): Assign {
+    parse_Assign(needSemicolon = true): Assign {
         let tocken = this.expect("identifier", "parse_Assign");
         this.expect("=", "parse_Assign");
         const expr = this.parse_E();
-        this.expect(";", "parse_Assign");
+        if (needSemicolon) {
+            this.expect(";", "parse_Assign");
+        }
         return new Assign({
             identifier: tocken.origin,
             expr: expr
@@ -351,13 +420,14 @@ export default class Parser {
     }
     parse_UnaryExpression(): UnaryExpression {
         let tocken = this.lexer.nextNotEmptyTerminal();
-        if (tocken.tocken === "-") {
-            this.lexer.popNotEmptyTerminal();
-            let e1 = this.parse_PrimaryExpression();
-            return new UnaryExpression({
-                e1,
-                opt: "-"
-            })
+        switch (tocken.tocken) {
+            case "-":
+                this.lexer.popNotEmptyTerminal();
+                let e1 = this.parse_PrimaryExpression();
+                return new UnaryExpression({
+                    e1,
+                    opt: "-"
+                })
         }
         return new UnaryExpression({
             e1: this.parse_PrimaryExpression()
@@ -405,6 +475,7 @@ export default class Parser {
         const tocken = this.lexer.nextNotEmptyTerminal();
         if (tocken.tocken === _tocken) {
             this.lexer.popNotEmptyTerminal();
+            return tocken;
         }
         return null;
     }

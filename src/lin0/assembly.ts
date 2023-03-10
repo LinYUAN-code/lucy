@@ -14,6 +14,10 @@ type Function = {
     global: boolean;
     stackSize: number;
 }
+type LoopExtData = {
+    breakTag: string;
+    continueTag: string;
+}
 // 栈区域分配
 /*
     0. rbp
@@ -30,6 +34,7 @@ export class CompileContext {
     optStackSize: number; //计算栈的大小
     optStackNum: number;
     tmpOptSize: number;
+    loopExtData?: LoopExtData
     constructor() {
         this.slotSum = 0;
         this.optStackNum = 0;
@@ -103,6 +108,15 @@ export class CompileContext {
             return this.slotSum + this.optStackSize + 8;
         }
         return this.slotSum + this.optStackSize;
+    }
+    getLoopExtData() {
+        if (!this.loopExtData) {
+            throw new Error("[getLoopExtData]");
+        }
+        return this.loopExtData;
+    }
+    setLoopExtData(data?: LoopExtData) {
+        this.loopExtData = data;
     }
 }
 

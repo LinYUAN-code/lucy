@@ -192,3 +192,36 @@ test("test assembly6", () => {
     console.log(asm);
     fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin6.s"), asm);
 })
+
+test("test assembly7", () => {
+    const interpreter = new Interpreter();
+    const asm = interpreter.toAssembly(`
+        function main(): int {
+            for(int a = 0; a < 10; a = a + 1) {
+                if(a==2) {
+                    continue;
+                }
+                print(a);
+                if(a==5) {
+                    break;
+                }
+            }
+            return 0;
+        }
+    `)
+    console.log(asm);
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin7.s"), asm);
+})
+
+test("test assembly8", () => {
+    const interpreter = new Interpreter();
+    const asm = interpreter.toAssembly(`
+        function main(): int {
+            int a = 10, b = 20, c = 99;
+            print(a,b,c);
+            return 0;
+        }
+    `)
+    console.log(asm);
+    fs.writeFileSync(path.join(__dirname, "../lin0/assembly/learnAssembly/lin8.s"), asm);
+})

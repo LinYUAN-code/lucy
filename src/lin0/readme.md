@@ -59,7 +59,9 @@ FunctionCall => identifier( Arguments )
 Return => return E
 
 IfStmt => if (expr) BlockStmt | if (expr) BlockStmt else (BlockStmt | IfStmt)
-For => for( (VarDecl|Nop) ; Expr; Assign;) BlockBody
+For => for( (VarDecl|Nop) ; (Expr|Nop); (Assign|Nop)) (BlockBody=>Break=>Continue)
+Break => break;
+Continue => continue;
 
 (E =>
 E '+' E

@@ -7,10 +7,83 @@ export type S = Array<GlobalDefinition>;
 export type GlobalDefinition = VarDecl | Function;
 export const NumberSIZE = 8;
 
-type BlockStmt = VarDecl | Assign | Print | Return | BlockBody | FunctionCall | IfStmt;
+type BlockStmt = VarDecl | Assign | Print | Return | BlockBody | FunctionCall | IfStmt | ForStmt | Break | Continue;
 type StringLiteral = string;
 export type E = CompareExpression;
 
+
+export class Continue {
+    public toAssembly(assembly: Assembly): INS[] {
+        const ins: INS[] = [];
+        ins.push(I('jmp', assembly.getCompileContext().getLoopExtData().continueTag));
+        return ins;
+    }
+    setupCompileContext(assembly: Assembly) {
+    }
+}
+
+export class Break {
+    public toAssembly(assembly: Assembly): INS[] {
+        const ins: INS[] = [];
+        ins.push(I('jmp', assembly.getCompileContext().getLoopExtData().breakTag));
+        return ins;
+    }
+    setupCompileContext(assembly: Assembly) {
+    }
+}
+
+export class ForStmt {
+    varDecl?: VarDecl;
+    expr?: E;
+    assign?: Assign;
+    block: BlockBody;
+    constructor({ varDecl, expr, assign, block }: {
+        varDecl?: VarDecl;
+        expr?: E;
+        assign?: Assign;
+        block: BlockBody;
+    }) {
+        this.varDecl = varDecl;
+        this.expr = expr;
+        this.assign = assign;
+        this.block = block;
+    }
+    public toAssembly(assembly: Assembly): INS[] {
+        const ins: INS[] = [];
+        const compileContext = assembly.getCompileContext();
+        compileContext.enterBlock();
+        const checkTag = assembly.getNewJumpTag();
+        const outterTag = assembly.getNewJumpTag();
+        const stepTag = assembly.getNewJumpTag();
+        ins.push(...(this.varDecl?.toAssembly(assembly) || []));
+        ins.push(TagI(checkTag, "nop"));
+        ins.push(...(this.expr?.getTOSCAAssembly(assembly) || []));
+        ins.push(...compileContext.optPop(r10));
+        ins.push(I('cmp', '$0', r10));
+        ins.push(I('je', outterTag));
+        compileContext.setLoopExtData({
+            breakTag: outterTag,
+            continueTag: stepTag
+        });
+        ins.push(...this.block.toAssembly(assembly));
+        compileContext.setLoopExtData();
+        ins.push(TagI(stepTag, "nop"));
+        ins.push(...(this.assign?.toAssembly(assembly) || []));
+        ins.push(I("jmp", checkTag));
+        ins.push(TagI(outterTag, "nop"));
+        compileContext.leaveBlock();
+        return ins;
+    }
+    setupCompileContext(assembly: Assembly) {
+        const compileContext = assembly.getCompileContext();
+        compileContext.enterBlock();
+        this.varDecl?.setupCompileContext(assembly);
+        this.expr?.setupCompileContext(assembly);
+        this.block.setupCompileContext(assembly);
+        this.assign?.setupCompileContext(assembly);
+        compileContext.leaveBlock();
+    }
+}
 export class IfStmt {
     expr: E;
     block1: BlockBody;
@@ -33,7 +106,7 @@ export class IfStmt {
         const outerTag = assembly.getNewJumpTag();
         const tag1 = assembly.getNewJumpTag();
         if (this.block2) {
-            ins.push(I('je', tag1));   // 不等于0那么跳转
+            ins.push(I('je', tag1));   // 等于0那么跳转
         } else {
             ins.push(I('je', outerTag));
         }
@@ -225,28 +298,41 @@ export class FunctionArgumentDefinition {
 
 export class VarDecl {
     type: string;
-    identifiers: string[];
+    decls: {
+        identifier: string;
+        expr?: E;
+    }[];
     global?: boolean;
-    constructor({ type, identifiers, global }: {
+    constructor({ type, global, decls }: {
         type: string;
-        identifiers: string[];
+        decls: {
+            identifier: string;
+            expr?: E;
+        }[];
         global?: boolean;
     }) {
-        this.identifiers = identifiers;
         this.type = type;
         this.global = global;
+        this.decls = decls;
     }
     public execute(ctx: Context) {
-        for (let x of this.identifiers) {
-            ctx.arriableTable.set(x, 0);
+        for (let x of this.decls) {
+            ctx.arriableTable.set(x.identifier, 0);
         }
     }
     public toAssembly(assembly: Assembly): INS[] {
         if (!this.global) {
             const compileContext = assembly.getCompileContext();
             let ans: INS[] = [];
-            for (let identifier of this.identifiers) {
-                ans.push(I('movq', '$0', compileContext.getVariablePos(identifier))); // 默认初始化为 0
+
+            for (let decl of this.decls) {
+                if (decl.expr) {
+                    ans.push(...decl.expr.getTOSCAAssembly(assembly));
+                    ans.push(...compileContext.optPop(r10));
+                    ans.push(I('movq', r10, compileContext.getVariablePos(decl.identifier)));
+                } else {
+                    ans.push(I('movq', '$0', compileContext.getVariablePos(decl.identifier)));
+                }
             }
             return ans;
         } else {
@@ -257,9 +343,10 @@ export class VarDecl {
                     type = "quad";
                     break;
             }
-            for (let identifier of this.identifiers) {
-                assembly.appendGlobalData(identifier, type, "0x0");
+            for (let decl of this.decls) {
+                assembly.appendGlobalData(decl.identifier, type, "0x0");
             }
+            // TODO! 全局变量参数初始化
             return [];
         }
     }
@@ -270,8 +357,9 @@ export class VarDecl {
             case "int":
                 size = 8;
         }
-        for (let identifier of this.identifiers) {
-            compileContext.findVariable(identifier, size);
+        for (let decl of this.decls) {
+            decl.expr?.setupCompileContext(assembly);
+            compileContext.findVariable(decl.identifier, size);
         }
     }
 }

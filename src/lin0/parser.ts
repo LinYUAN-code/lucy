@@ -5,12 +5,12 @@ import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, Function
 
 let global = false;
 const terminals: Array<[string, RegExp]> = [
-    ["-", /^-/],
     ["/", /^\//],
     ["++", /^\+\+/], //todo!
     ["+=", /^\+\=/], //todo!
     ["-=", /^\-\=/], //todo!
     ["*=", /^\*\=/], //todo!
+    ["-", /^-/],
     ["+", /^\+/],
     ["*", /^\*/],
     ["%", /^\%/],
@@ -101,6 +101,9 @@ export default class Parser {
                     break;
                 case "identifier":
                     switch (this.lexer.nextNotEmpty(2).tocken) {
+                        case "+=":
+                        case "-=":
+                        case "*=":
                         case "=":
                             res.push(this.parse_Assign());
                             break;
@@ -298,16 +301,68 @@ export default class Parser {
         return varDecl;
     }
     parse_Assign(needSemicolon = true): Assign {
-        let tocken = this.expect("identifier", "parse_Assign");
-        this.expect("=", "parse_Assign");
-        const expr = this.parse_E();
-        if (needSemicolon) {
-            this.expect(";", "parse_Assign");
+        let identifierTocken = this.expect("identifier", "parse_Assign");
+        let optTocken = this.lexer.popNotEmptyTerminal();
+        switch (optTocken.tocken) {
+            case "=": {
+                const expr = this.parse_E();
+                if (needSemicolon) {
+                    this.expect(";", "parse_Assign");
+                }
+                return new Assign({
+                    identifier: identifierTocken.origin,
+                    expr: expr
+                })
+            }
+            case "+=": {
+                let exprR = this.parse_E();
+                const expr = new AdditiveExpression({
+                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                    e2: new PrimaryExpression({ e1: exprR }),
+                    opt: "+",
+                })
+                if (needSemicolon) {
+                    this.expect(";", "parse_Assign");
+                }
+                return new Assign({
+                    identifier: identifierTocken.origin,
+                    expr: expr
+                })
+            }
+            case "-=": {
+                let exprR = this.parse_E();
+                const expr = new AdditiveExpression({
+                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                    e2: new PrimaryExpression({ e1: exprR }),
+                    opt: "-",
+                })
+                if (needSemicolon) {
+                    this.expect(";", "parse_Assign");
+                }
+                return new Assign({
+                    identifier: identifierTocken.origin,
+                    expr: expr
+                })
+            }
+            case "*=": {
+                let exprR = this.parse_E();
+                const expr = new MultiplicativeExpression({
+                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                    e2: new PrimaryExpression({ e1: exprR }),
+                    opt: "*",
+                })
+                if (needSemicolon) {
+                    this.expect(";", "parse_Assign");
+                }
+                return new Assign({
+                    identifier: identifierTocken.origin,
+                    expr: expr
+                })
+            }
+            default:
+                throw new Error("[parse_Assign]");
         }
-        return new Assign({
-            identifier: tocken.origin,
-            expr: expr
-        })
+
     }
     parse_Print(): Print {
         this.expect("print", "parse_Print");

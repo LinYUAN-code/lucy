@@ -218,6 +218,9 @@ test("test assembly8", () => {
     const asm = interpreter.toAssembly(`
         function main(): int {
             int a = 10, b = 20, c = 99;
+            a -= 1;
+            a += 2;
+            a *= 9;
             print(a,b,c);
             return 0;
         }

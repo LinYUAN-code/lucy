@@ -15,6 +15,33 @@ _main:
     movq    $99, -32(%rbp)
     movq    -32(%rbp), %r10
     movq    %r10, -24(%rbp)
+    movq    $1, -32(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, -40(%rbp)
+    movq    -40(%rbp), %r10
+    movq    -32(%rbp), %r11
+    subq    %r11, %r10
+    movq    %r10, -32(%rbp)
+    movq    -32(%rbp), %r9
+    movq    %r9, -8(%rbp)
+    movq    $2, -32(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, -40(%rbp)
+    movq    -40(%rbp), %r10
+    movq    -32(%rbp), %r11
+    addq    %r11, %r10
+    movq    %r10, -32(%rbp)
+    movq    -32(%rbp), %r9
+    movq    %r9, -8(%rbp)
+    movq    $9, -32(%rbp)
+    movq    -8(%rbp), %r9
+    movq    %r9, -40(%rbp)
+    movq    -40(%rbp), %r10
+    movq    -32(%rbp), %r11
+    imulq    %r11, %r10
+    movq    %r10, -32(%rbp)
+    movq    -32(%rbp), %r9
+    movq    %r9, -8(%rbp)
     movq    -8(%rbp), %r9
     movq    %r9, -32(%rbp)
     movq    -32(%rbp), %rsi

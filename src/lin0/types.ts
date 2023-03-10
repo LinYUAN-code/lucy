@@ -365,10 +365,10 @@ export class VarDecl {
 }
 export class Assign {
     identifier: string;
-    expr: E;
+    expr: E | AdditiveExpression | MultiplicativeExpression;
     constructor({ identifier, expr }: {
         identifier: string;
-        expr: E;
+        expr: E | AdditiveExpression | MultiplicativeExpression;
     }) {
         this.identifier = identifier;
         this.expr = expr;
@@ -642,12 +642,12 @@ export class CompareExpression {
     }
 }
 export class AdditiveExpression {
-    e1: AdditiveExpression | MultiplicativeExpression;
-    e2?: MultiplicativeExpression;
+    e1: AdditiveExpression | MultiplicativeExpression | PrimaryExpression;
+    e2?: MultiplicativeExpression | PrimaryExpression;
     opt?: string;
     constructor({ e1, e2, opt }: {
-        e1: AdditiveExpression | MultiplicativeExpression;
-        e2?: MultiplicativeExpression;
+        e1: AdditiveExpression | MultiplicativeExpression | PrimaryExpression;
+        e2?: MultiplicativeExpression | PrimaryExpression;
         opt?: string;
     }) {
         this.e1 = e1;
@@ -704,12 +704,12 @@ export class AdditiveExpression {
 }
 
 export class MultiplicativeExpression {
-    e1: MultiplicativeExpression | UnaryExpression;
-    e2?: UnaryExpression;
+    e1: MultiplicativeExpression | UnaryExpression | PrimaryExpression;
+    e2?: UnaryExpression | PrimaryExpression;
     opt?: string;
     constructor({ e1, e2, opt }: {
-        e1: MultiplicativeExpression | UnaryExpression;
-        e2?: UnaryExpression;
+        e1: MultiplicativeExpression | UnaryExpression | PrimaryExpression;
+        e2?: UnaryExpression | PrimaryExpression;
         opt?: string;
     }) {
         this.e1 = e1;

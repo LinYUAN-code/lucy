@@ -74,8 +74,11 @@ declare function getTockFromSimpleGrammers(inGrammers: Array<string>): {
     nonTerminals: Array<string>;
     terminals: Array<[string, RegExp]>;
 };
+declare function checkNeedunionGrammers(grammers: Array<string>): boolean;
 declare function unionGrammers(grammers: Array<string>): Array<string>;
+declare function checkNeedliftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): boolean;
 declare function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string>;
+declare function checkNeedClearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): boolean;
 declare function clearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string>;
 
-export { LL1Parser, Lexer, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };
+export { LL1Parser, Lexer, checkNeedClearRightRecursion, checkNeedliftUpCommonTocken, checkNeedunionGrammers, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };

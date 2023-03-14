@@ -41,11 +41,21 @@ let grammers = [
   "C => c",
 ];
 // 合并(A => a , A => b   === A => a | b),并简单去重
-grammers = lucy.unionGrammers(grammers);
+if (lucy.checkNeedunionGrammers(grammers)) {
+  grammers = lucy.unionGrammers(grammers);
+  console.log("[unionGrammers]", grammers);
+}
 // 提左公因子
-grammers = lucy.liftUpCommonTocken(grammers);
+if (lucy.checkNeedliftUpCommonTocken(grammers)) {
+  grammers = lucy.liftUpCommonTocken(grammers);
+  console.log("[liftUpCommonTocken]", grammers);
+}
+
 // 消除左递归
-grammers = lucy.clearRightRecursion(grammers);
+if (lucy.checkNeedClearRightRecursion(grammers)) {
+  grammers = lucy.clearRightRecursion(grammers);
+  console.log("[clearRightRecursion]", grammers);
+}
 ```
 
 ```javascript

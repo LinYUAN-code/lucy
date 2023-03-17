@@ -229,18 +229,23 @@ export class Function {
         // 初始化编译环境：变量声明在栈中的位置
         this.setupCompileContext(assembly);
         assembly.getCompileContext().resetBlockId();
+        assembly.getCompileContext().enterBlock();
         // 参数入栈
         ins.push(...this.argumentDefinition.toAssembly(assembly));
         // 函数体执行
         ins.push(...this.blockBody.toAssembly(assembly));
         assembly.appendFunction(this.functionName, ins, assembly.getCompileContext().getStackSize(), this.global);
+        assembly.getCompileContext().leaveBlock();
         assembly.removeCompileContext();
         return [];
     }
     setupCompileContext(assembly: Assembly) {
         assembly.setupCompileContext();
+        const compileContext  = assembly.getCompileContext();
+        compileContext.enterBlock();
         this.argumentDefinition.setupCompileContext(assembly);
         this.blockBody.setupCompileContext(assembly);
+        compileContext.leaveBlock();
     }
     public getStringLiterals(): string[] {
         return [];
@@ -258,8 +263,8 @@ export class Variable {
     }
     getSize(): number {
         switch (this.type) {
-            case "int":
-                return 8;
+        case "int":
+            return 8;
         }
         throw new Error("[Variable getSize] unknow type");
     }
@@ -339,9 +344,9 @@ export class VarDecl {
             // 全局变量
             let type = "";
             switch (this.type) {
-                case "int":
-                    type = "quad";
-                    break;
+            case "int":
+                type = "quad";
+                break;
             }
             for (let decl of this.decls) {
                 assembly.appendGlobalData(decl.identifier, type, "0x0");
@@ -354,8 +359,8 @@ export class VarDecl {
         const compileContext = assembly.getCompileContext();
         let size = 0;
         switch (this.type) {
-            case "int":
-                size = 8;
+        case "int":
+            size = 8;
         }
         for (let decl of this.decls) {
             decl.expr?.setupCompileContext(assembly);
@@ -536,94 +541,94 @@ export class CompareExpression {
             ans.push(...compileContext.optPop(r11));
             // ["===", "==", "!=",">", ">=", "<", "<="]
             switch (this.opt) {
-                case "==":
+            case "==":
                 // TODO!: 完善类型系统之后去做 like 比较
-                case "===":
-                    // 严格比较
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$6', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
-                    break;
-                case ">":
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$7', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
+            case "===":
+                // 严格比较
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$6', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
+                break;
+            case ">":
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$7', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
 
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$6', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$6', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
 
-                    ans.push(...compileContext.optPop(r11));
-                    ans.push(...compileContext.optPop(r10));
-                    ans.push(I("xor", '$1', r11));
-                    ans.push(I("xor", '$1', r10));
-                    ans.push(I("and", r11, r10));
-                    ans.push(...compileContext.optPush(r10));
-                    break;
-                case ">=":
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$7', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(I("xor", '$1', al));
-                    ans.push(...compileContext.optPush(rax));
-                    break;
-                case "<":
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$7', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
-                    break;
-                case "<=":
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$7', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
+                ans.push(...compileContext.optPop(r11));
+                ans.push(...compileContext.optPop(r10));
+                ans.push(I("xor", '$1', r11));
+                ans.push(I("xor", '$1', r10));
+                ans.push(I("and", r11, r10));
+                ans.push(...compileContext.optPush(r10));
+                break;
+            case ">=":
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$7', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(I("xor", '$1', al));
+                ans.push(...compileContext.optPush(rax));
+                break;
+            case "<":
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$7', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
+                break;
+            case "<=":
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$7', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
 
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$6', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(...compileContext.optPush(rax));
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$6', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(...compileContext.optPush(rax));
 
-                    ans.push(...compileContext.optPop(r11));
-                    ans.push(...compileContext.optPop(r10));
-                    ans.push(I("xor", r11, r10));
-                    ans.push(...compileContext.optPush(r10));
-                    break;
-                case "!=":
-                    // 严格比较
-                    ans.push(I("xorq", rax, rax));
-                    ans.push(I("cmp", r11, r10));
-                    ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
-                    ans.push(I("shr", '$6', ah));
-                    ans.push(I("and", '$1', ah));
-                    ans.push(I("shr", '$8', ax));
-                    ans.push(I("xor", '$1', al));
-                    ans.push(...compileContext.optPush(rax));
-                    break;
+                ans.push(...compileContext.optPop(r11));
+                ans.push(...compileContext.optPop(r10));
+                ans.push(I("xor", r11, r10));
+                ans.push(...compileContext.optPush(r10));
+                break;
+            case "!=":
+                // 严格比较
+                ans.push(I("xorq", rax, rax));
+                ans.push(I("cmp", r11, r10));
+                ans.push(I("LAHF")); // 将标志位寄存器的低八位 移入 AH
+                ans.push(I("shr", '$6', ah));
+                ans.push(I("and", '$1', ah));
+                ans.push(I("shr", '$8', ax));
+                ans.push(I("xor", '$1', al));
+                ans.push(...compileContext.optPush(rax));
+                break;
             }
         } else {
             ans.push(...this.e1.getTOSCAAssembly(assembly));
@@ -657,10 +662,10 @@ export class AdditiveExpression {
     public getValue(ctx: Context): number {
         if (this.e2) {
             switch (this.opt) {
-                case "+":
-                    return this.e1.getValue(ctx) + this.e2.getValue(ctx);
-                case "-":
-                    return this.e1.getValue(ctx) - this.e2.getValue(ctx);
+            case "+":
+                return this.e1.getValue(ctx) + this.e2.getValue(ctx);
+            case "-":
+                return this.e1.getValue(ctx) - this.e2.getValue(ctx);
             }
             throw new Error("[AdditiveExpression] getValue")
         }
@@ -678,12 +683,12 @@ export class AdditiveExpression {
             ans.push(...compileContext.optPop(r10));
             ans.push(...compileContext.optPop(r11));
             switch (this.opt) {
-                case "+":
-                    ans.push(I("addq", r11, r10));
-                    break;
-                case "-":
-                    ans.push(I('subq', r11, r10));
-                    break;
+            case "+":
+                ans.push(I("addq", r11, r10));
+                break;
+            case "-":
+                ans.push(I('subq', r11, r10));
+                break;
             }
             ans.push(...compileContext.optPush(r10));
         } else {
@@ -719,10 +724,10 @@ export class MultiplicativeExpression {
     public getValue(ctx: Context): number {
         if (this.e2) {
             switch (this.opt) {
-                case "*":
-                    return this.e1.getValue(ctx) * this.e2.getValue(ctx);
-                case "/":
-                    return this.e1.getValue(ctx) / this.e2.getValue(ctx);
+            case "*":
+                return this.e1.getValue(ctx) * this.e2.getValue(ctx);
+            case "/":
+                return this.e1.getValue(ctx) / this.e2.getValue(ctx);
             }
             throw new Error("[MultiplicativeExpression] getValue")
         }
@@ -737,27 +742,27 @@ export class MultiplicativeExpression {
             ans.push(...compileContext.optPop(r10));
             ans.push(...compileContext.optPop(r11));
             switch (this.opt) {
-                case "*":
-                    ans.push(I('imulq', r11, r10));
-                    ans.push(...compileContext.optPush(r10));
-                    break;
-                case "/":
-                    ans.push(...compileContext.optPush(rdx));
-                    ans.push(I('movq', r10, rax));
-                    ans.push(I('cqto'));
-                    ans.push(I('idivq', r11));
-                    ans.push(...compileContext.optPop(rdx));
-                    ans.push(...compileContext.optPush(rax));
-                    break;
-                case "%":
-                    ans.push(...compileContext.optPush(rdx));
-                    ans.push(I('movq', r10, rax));
-                    ans.push(I('cqto'));
-                    ans.push(I('idivq', r11));
-                    ans.push(I('movq', rdx, r11));
-                    ans.push(...compileContext.optPop(rdx));
-                    ans.push(...compileContext.optPush(r11));
-                    break;
+            case "*":
+                ans.push(I('imulq', r11, r10));
+                ans.push(...compileContext.optPush(r10));
+                break;
+            case "/":
+                ans.push(...compileContext.optPush(rdx));
+                ans.push(I('movq', r10, rax));
+                ans.push(I('cqto'));
+                ans.push(I('idivq', r11));
+                ans.push(...compileContext.optPop(rdx));
+                ans.push(...compileContext.optPush(rax));
+                break;
+            case "%":
+                ans.push(...compileContext.optPush(rdx));
+                ans.push(I('movq', r10, rax));
+                ans.push(I('cqto'));
+                ans.push(I('idivq', r11));
+                ans.push(I('movq', rdx, r11));
+                ans.push(...compileContext.optPop(rdx));
+                ans.push(...compileContext.optPush(r11));
+                break;
             }
         } else {
             ans.push(...this.e1.getTOSCAAssembly(assembly));
@@ -789,8 +794,8 @@ export class UnaryExpression {
     public getValue(ctx: Context): number {
         if (this.opt) {
             switch (this.opt) {
-                case "-":
-                    return this.e1.getValue(ctx) * this.e1.getValue(ctx);
+            case "-":
+                return this.e1.getValue(ctx) * this.e1.getValue(ctx);
             }
             throw new Error("[UnaryExpression] getValue")
         }
@@ -801,12 +806,12 @@ export class UnaryExpression {
         const compileContext = assembly.getCompileContext();
         if (this.opt) {
             switch (this.opt) {
-                case "-":
-                    ans.push(...compileContext.optPop(r11));
-                    ans.push(I('xorq', r10, r10));
-                    ans.push(I('subq', r11, r10));
-                    ans.push(...compileContext.optPush(r10));
-                    break;
+            case "-":
+                ans.push(...compileContext.optPop(r11));
+                ans.push(I('xorq', r10, r10));
+                ans.push(I('subq', r11, r10));
+                ans.push(...compileContext.optPush(r10));
+                break;
             }
         }
         return ans

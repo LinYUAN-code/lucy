@@ -6,10 +6,10 @@ import { AdditiveExpression, Arguments, Assign, BlockBody, E, Function, Function
 let global = false;
 const terminals: Array<[string, RegExp]> = [
     ["/", /^\//],
-    ["++", /^\+\+/], //todo!
-    ["+=", /^\+\=/], //todo!
-    ["-=", /^\-\=/], //todo!
-    ["*=", /^\*\=/], //todo!
+    ["++", /^\+\+/],
+    ["+=", /^\+\=/],
+    ["-=", /^\-\=/],
+    ["*=", /^\*\=/],
     ["-", /^-/],
     ["+", /^\+/],
     ["*", /^\*/],
@@ -29,6 +29,7 @@ const terminals: Array<[string, RegExp]> = [
     [">", /^\>/],
     ["<", /^\</],
     ["!=", /^\!\=/],
+    ["if", /^if/],
     ["if", /^if/],
     ["for", /^for/],
     ["break", /^break/],
@@ -77,14 +78,14 @@ export default class Parser {
     parse_GlobalDefinition(): GlobalDefinition {
         const tocken = this.lexer.nextNotEmptyTerminal();
         switch (tocken.tocken) {
-            case "BasicType":
-                global = true;
-                const stmt = this.parse_VarDecl();
-                global = false;
-                this.expect(";", "parse_Stmt");
-                return stmt;
-            case "function":
-                return this.parse_Function();
+        case "BasicType":
+            global = true;
+            const stmt = this.parse_VarDecl();
+            global = false;
+            this.expect(";", "parse_Stmt");
+            return stmt;
+        case "function":
+            return this.parse_Function();
         }
         throw new Error("[parse_Stmt]");
     }
@@ -94,45 +95,45 @@ export default class Parser {
         while (true) {
             const tocken = this.lexer.nextNotEmptyTerminal();
             switch (tocken.tocken) {
-                case "BasicType":
-                    const stmt = this.parse_VarDecl();
-                    this.expect(";", "parse_Stmt");
-                    res.push(stmt);
+            case "BasicType":
+                const stmt = this.parse_VarDecl();
+                this.expect(";", "parse_Stmt");
+                res.push(stmt);
+                break;
+            case "identifier":
+                switch (this.lexer.nextNotEmpty(2).tocken) {
+                case "+=":
+                case "-=":
+                case "*=":
+                case "=":
+                    res.push(this.parse_Assign());
                     break;
-                case "identifier":
-                    switch (this.lexer.nextNotEmpty(2).tocken) {
-                        case "+=":
-                        case "-=":
-                        case "*=":
-                        case "=":
-                            res.push(this.parse_Assign());
-                            break;
-                        case "(":
-                            res.push(this.parse_FunctionCall());
-                            break;
-                    }
+                case "(":
+                    res.push(this.parse_FunctionCall());
                     break;
-                case "print":
-                    res.push(this.parse_Print());
-                    break;
-                case "return":
-                    res.push(this.parse_Return());
-                    break;
-                case "if":
-                    res.push(this.parse_IfStmt());
-                    break;
-                case "for":
-                    res.push(this.parse_ForStmt());
-                    break;
-                case "break":
-                    res.push(this.parse_Break());
-                    break;
-                case "continue":
-                    res.push(this.parse_Continue());
-                    break;
-                default:
-                    this.expect("}", "parse_BlockBody");
-                    return res;
+                }
+                break;
+            case "print":
+                res.push(this.parse_Print());
+                break;
+            case "return":
+                res.push(this.parse_Return());
+                break;
+            case "if":
+                res.push(this.parse_IfStmt());
+                break;
+            case "for":
+                res.push(this.parse_ForStmt());
+                break;
+            case "break":
+                res.push(this.parse_Break());
+                break;
+            case "continue":
+                res.push(this.parse_Continue());
+                break;
+            default:
+                this.expect("}", "parse_BlockBody");
+                return res;
             }
         }
     }
@@ -304,63 +305,63 @@ export default class Parser {
         let identifierTocken = this.expect("identifier", "parse_Assign");
         let optTocken = this.lexer.popNotEmptyTerminal();
         switch (optTocken.tocken) {
-            case "=": {
-                const expr = this.parse_E();
-                if (needSemicolon) {
-                    this.expect(";", "parse_Assign");
-                }
-                return new Assign({
-                    identifier: identifierTocken.origin,
-                    expr: expr
-                })
+        case "=": {
+            const expr = this.parse_E();
+            if (needSemicolon) {
+                this.expect(";", "parse_Assign");
             }
-            case "+=": {
-                let exprR = this.parse_E();
-                const expr = new AdditiveExpression({
-                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
-                    e2: new PrimaryExpression({ e1: exprR }),
-                    opt: "+",
-                })
-                if (needSemicolon) {
-                    this.expect(";", "parse_Assign");
-                }
-                return new Assign({
-                    identifier: identifierTocken.origin,
-                    expr: expr
-                })
+            return new Assign({
+                identifier: identifierTocken.origin,
+                expr: expr
+            })
+        }
+        case "+=": {
+            let exprR = this.parse_E();
+            const expr = new AdditiveExpression({
+                e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                e2: new PrimaryExpression({ e1: exprR }),
+                opt: "+",
+            })
+            if (needSemicolon) {
+                this.expect(";", "parse_Assign");
             }
-            case "-=": {
-                let exprR = this.parse_E();
-                const expr = new AdditiveExpression({
-                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
-                    e2: new PrimaryExpression({ e1: exprR }),
-                    opt: "-",
-                })
-                if (needSemicolon) {
-                    this.expect(";", "parse_Assign");
-                }
-                return new Assign({
-                    identifier: identifierTocken.origin,
-                    expr: expr
-                })
+            return new Assign({
+                identifier: identifierTocken.origin,
+                expr: expr
+            })
+        }
+        case "-=": {
+            let exprR = this.parse_E();
+            const expr = new AdditiveExpression({
+                e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                e2: new PrimaryExpression({ e1: exprR }),
+                opt: "-",
+            })
+            if (needSemicolon) {
+                this.expect(";", "parse_Assign");
             }
-            case "*=": {
-                let exprR = this.parse_E();
-                const expr = new MultiplicativeExpression({
-                    e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
-                    e2: new PrimaryExpression({ e1: exprR }),
-                    opt: "*",
-                })
-                if (needSemicolon) {
-                    this.expect(";", "parse_Assign");
-                }
-                return new Assign({
-                    identifier: identifierTocken.origin,
-                    expr: expr
-                })
+            return new Assign({
+                identifier: identifierTocken.origin,
+                expr: expr
+            })
+        }
+        case "*=": {
+            let exprR = this.parse_E();
+            const expr = new MultiplicativeExpression({
+                e1: new PrimaryExpression({ identifier: identifierTocken.origin }),
+                e2: new PrimaryExpression({ e1: exprR }),
+                opt: "*",
+            })
+            if (needSemicolon) {
+                this.expect(";", "parse_Assign");
             }
-            default:
-                throw new Error("[parse_Assign]");
+            return new Assign({
+                identifier: identifierTocken.origin,
+                expr: expr
+            })
+        }
+        default:
+            throw new Error("[parse_Assign]");
         }
 
     }
@@ -476,13 +477,13 @@ export default class Parser {
     parse_UnaryExpression(): UnaryExpression {
         let tocken = this.lexer.nextNotEmptyTerminal();
         switch (tocken.tocken) {
-            case "-":
-                this.lexer.popNotEmptyTerminal();
-                let e1 = this.parse_PrimaryExpression();
-                return new UnaryExpression({
-                    e1,
-                    opt: "-"
-                })
+        case "-":
+            this.lexer.popNotEmptyTerminal();
+            let e1 = this.parse_PrimaryExpression();
+            return new UnaryExpression({
+                e1,
+                opt: "-"
+            })
         }
         return new UnaryExpression({
             e1: this.parse_PrimaryExpression()
@@ -491,29 +492,29 @@ export default class Parser {
     parse_PrimaryExpression(): PrimaryExpression {
         let tocken = this.lexer.popNotEmptyTerminal();
         switch (tocken.tocken) {
-            case "identifier":
-                switch (this.lexer.nextNotEmpty(2).tocken) {
-                    case "(":
-                        const functionCall = this.parse_FunctionCall();
-                        functionCall.needPushToStack = true;
-                        return new PrimaryExpression({
-                            functionCall,
-                        });
-                    default:
-                        return new PrimaryExpression({
-                            identifier: tocken.origin
-                        })
-                }
-            case "integer":
-                return new PrimaryExpression({
-                    val: tocken.origin
-                })
+        case "identifier":
+            switch (this.lexer.nextNotEmpty(2).tocken) {
             case "(":
-                let e1 = this.parse_E();
-                this.expect(")", "parse_PrimaryExpression")
+                const functionCall = this.parse_FunctionCall();
+                functionCall.needPushToStack = true;
                 return new PrimaryExpression({
-                    e1
+                    functionCall,
+                });
+            default:
+                return new PrimaryExpression({
+                    identifier: tocken.origin
                 })
+            }
+        case "integer":
+            return new PrimaryExpression({
+                val: tocken.origin
+            })
+        case "(":
+            let e1 = this.parse_E();
+            this.expect(")", "parse_PrimaryExpression")
+            return new PrimaryExpression({
+                e1
+            })
         }
 
         throw new Error("[parse_PrimaryExpression]")

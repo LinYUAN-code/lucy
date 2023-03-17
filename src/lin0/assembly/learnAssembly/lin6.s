@@ -20,11 +20,11 @@ _main:
     movq    -40(%rbp), %r10
     cmp    $0, %r10
     je    LBB.1
-    movq    $0, -8(%rbp)
+    movq    $0, -16(%rbp)
     movq    $1, -40(%rbp)
     movq    -40(%rbp), %r9
-    movq    %r9, -8(%rbp)
-    movq    -8(%rbp), %r9
+    movq    %r9, -16(%rbp)
+    movq    -16(%rbp), %r9
     movq    %r9, -40(%rbp)
     movq    -40(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
@@ -47,11 +47,11 @@ LBB.1:
     movq    -40(%rbp), %r10
     cmp    $0, %r10
     je    LBB.3
-    movq    $0, -16(%rbp)
+    movq    $0, -24(%rbp)
     movq    $2, -40(%rbp)
     movq    -40(%rbp), %r9
-    movq    %r9, -16(%rbp)
-    movq    -16(%rbp), %r9
+    movq    %r9, -24(%rbp)
+    movq    -24(%rbp), %r9
     movq    %r9, -40(%rbp)
     movq    -40(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
@@ -74,11 +74,11 @@ LBB.3:
     movq    -40(%rbp), %r10
     cmp    $0, %r10
     je    LBB.5
-    movq    $0, -24(%rbp)
+    movq    $0, -32(%rbp)
     movq    $3, -40(%rbp)
     movq    -40(%rbp), %r9
-    movq    %r9, -24(%rbp)
-    movq    -24(%rbp), %r9
+    movq    %r9, -32(%rbp)
+    movq    -32(%rbp), %r9
     movq    %r9, -40(%rbp)
     movq    -40(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi
@@ -87,11 +87,11 @@ LBB.3:
     jmp    LBB.4
 LBB.5:
     nop    
-    movq    $0, -32(%rbp)
+    movq    $0, -8(%rbp)
     movq    $4, -40(%rbp)
     movq    -40(%rbp), %r9
-    movq    %r9, -32(%rbp)
-    movq    -32(%rbp), %r9
+    movq    %r9, -8(%rbp)
+    movq    -8(%rbp), %r9
     movq    %r9, -40(%rbp)
     movq    -40(%rbp), %rsi
     leaq    L.str.0(%rip), %rdi

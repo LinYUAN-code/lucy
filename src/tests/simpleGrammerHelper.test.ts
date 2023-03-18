@@ -2,6 +2,22 @@ import { clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, uni
 import log, { nullLogChannel } from "@/utils/log";
 import { LL1Parser } from "..";
 
+test("unionGrammers", () => {
+    let grammers = [
+        "S  =>  A B | a | b",
+        "S  =>  A B | a | b",
+        "S  =>  A B | a | b",
+        "A  =>  a",
+        "B  =>  b",
+    ]
+    grammers = unionGrammers(grammers);
+    console.log(grammers);
+    grammers = liftUpCommonTocken(grammers);
+    console.log(grammers);
+    grammers = clearRightRecursion(grammers);
+    console.log(grammers);
+})
+
 
 test("first set test", () => {
     const grammers = [
@@ -31,7 +47,7 @@ test("simple set test", () => {
         "B => b",
         "C => c",
     ]
-    log.logTo(nullLogChannel);
+    // log.logTo(nullLogChannel);
     grammers = unionGrammers(grammers);
     log.log(grammers);
     grammers = liftUpCommonTocken(grammers);

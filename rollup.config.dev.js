@@ -9,37 +9,37 @@ import dts from "rollup-plugin-dts";
 import tsConfigPaths from "rollup-plugin-tsconfig-paths";
 
 export default [
-  {
-    input: path.join(__dirname, "./src/index.ts"),
-    output: [
-      {
-        file: "dist/index.esm.js",
-        format: "esm",
-      },
-      {
-        file: "dist/index.umd.js",
-        format: "umd",
-        name: "index",
-      },
-    ],
-    plugins: [
-      typescript({ tsconfig: "./tsconfig.json" }),
-      replace({
-        "build.tool.env": "'dev'",
-        preventAssignment: true,
-      }),
-      stripCode({
-        start_comment: "START.ONLYTEST",
-        end_comment: "END.ONLYTEST",
-      }),
-      resolve(),
-      commonjs(),
-      livereload(),
-    ],
-  },
-  {
-    input: "./src/index.ts",
-    output: [{ file: "dist/index.d.ts", format: "es" }],
-    plugins: [tsConfigPaths(), dts()],
-  },
+    {
+        input: path.join(__dirname, "./src/index.ts"),
+        output: [
+            {
+                file: "dist/index.esm.js",
+                format: "esm",
+            },
+            {
+                file: "dist/index.umd.js",
+                format: "umd",
+                name: "index",
+            },
+        ],
+        plugins: [
+            typescript({ tsconfig: "./tsconfig.json" }),
+            replace({
+                "build.tool.env": "'dev'",
+                preventAssignment: true,
+            }),
+            stripCode({
+                start_comment: "START.ONLYTEST",
+                end_comment: "END.ONLYTEST",
+            }),
+            resolve(),
+            commonjs(),
+            livereload(),
+        ],
+    },
+    {
+        input: "./src/index.ts",
+        output: [{ file: "dist/index.d.ts", format: "es" }],
+        plugins: [tsConfigPaths(), dts()],
+    },
 ];

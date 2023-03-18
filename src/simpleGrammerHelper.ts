@@ -80,20 +80,36 @@ export function checkNeedunionGrammers(grammers: Array<string>): boolean {
 
     并且会简单去重
 */
-export function unionGrammers(grammers: Array<string>): Array<string> {
+export function unionGrammers(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string> {
     let unionMap = new Map<string, Array<string>>();
     const result: Array<string> = [];
+    if (!nonTerminals || !terminals) {
+        const tockenAnaRes = getTockFromSimpleGrammers(grammers);
+        nonTerminals = tockenAnaRes.nonTerminals;
+        terminals = tockenAnaRes.terminals;
+    }
+    let lexer = new Lexer(terminals, nonTerminals);
     grammers.forEach(grammer => {
         grammer = grammer.replaceAll(/\s/g, "");
         const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
         const nonTerminal = arr[0];
-        const derivation = arr[1];
+        const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+            log.log("[debug]", result);
+            return lexer.splitDerivation(derivation);
+        })
+
         if (unionMap.has(nonTerminal)) {
-            const derivations = unionMap.get(nonTerminal);
-            derivations?.push(derivation);
-            unionMap.set(nonTerminal, derivations!);
+            const arr = unionMap.get(nonTerminal);
+            derivations.forEach(derivation=>{
+                const deri = derivation.join(" ");
+                if(arr?.indexOf(deri) === -1) {
+                    arr.push(deri);
+                }
+            })
         } else {
-            unionMap.set(nonTerminal, [derivation]);
+            unionMap.set(nonTerminal, derivations.map(derivation=>{
+                return derivation.join(" ");
+            }));
         }
     })
     for (let nonTerminal of unionMap.keys()) {
@@ -179,7 +195,7 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
                 // 可以提取公因子
                 const newUnTerminal = lexer.getNewNonTerminal(nonTerminal);
                 newDerivation.push(tocken + newUnTerminal);
-                newAddGrammers.push(newUnTerminal + " => " + derivations?.map(v => v.join("")).join(" | "));
+                newAddGrammers.push(newUnTerminal + " => " + derivations?.map(v => v.join(" ")).join(" | "));
             }
             return nonTerminal + " => " + newDerivation.join(" | ");
         });
@@ -304,7 +320,7 @@ export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Arra
     }
     for (let nonTerminal of nonTerminals2DerivationMap.keys()) {
         const derivation: string = nonTerminals2DerivationMap.get(nonTerminal)!.map(derivation => {
-            return derivation.join("");
+            return derivation.join(" ");
         }).join(" | ");
         result.push(`${nonTerminal} => ${derivation}`);
     }

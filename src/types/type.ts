@@ -41,3 +41,28 @@ export type Process<T> = {
   ruleIndex: number;
   result: T;
 }
+
+export type LRStateNodeItem = {
+  nonTerminal: NonTerminal;
+  derivation: string[];
+  matchPoint: number; // such * A ==> 0    A * b  ===> 1
+}
+export type LRStateNode = {
+  id: number;
+  items: LRStateNodeItem[];
+  edges: {
+    tocken: NonTerminal | Terminal;
+    next: LRStateNode;
+  }[]
+}
+
+export type LRStateNodeForShow = {
+  id: number;
+  items: string[];
+  edges: {
+    tocken: NonTerminal | Terminal;
+    next: LRStateNodeForShow;
+  }[]
+}
+
+

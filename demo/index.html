@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script>
-  <!-- <script src="../dist/index.iife.js"></script> -->
+  <!-- <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script> -->
+  <script src="../dist/index.iife.js"></script>
   <script>
     const testCase = {
       nonTerminalSymbol: ["E'", "E", "T'", "T", "F"],
@@ -102,6 +102,27 @@
         grammers = lucy.clearRightRecursion(grammers);
         console.log("[clearRightRecursion]", grammers);
       }
+    }
+    {
+      console.log("---[LR]---");
+
+      let grammers = [
+          "E  =>  E + T | T",
+          "T => T * F | F",
+          "F => (E) | id",
+      ]
+      const lRParser = new lucy.LRParser();
+      const nonTerminals = ["E","T","F"];
+      const terminals = [["+",/^\+/],["*",/^\*/],["(",/^\(/],[")",/^\)/],["id",/^id/]];
+      lRParser.generateState(grammers,"E",nonTerminals,terminals);
+      // 状态机图
+      const stateNode = lRParser.stateGraph;
+      // 分析表
+      const predictTable = lRParser.generateSLR1PredictTable();
+      console.log(stateNode,predictTable);
+      // 分析结果
+      const predictResult = lRParser.predictInput("id * id + id",predictTable);
+      console.log(predictResult);
     }
   </script>
   <body>

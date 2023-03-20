@@ -122,4 +122,23 @@ for (let process of ll1Parser.getPredictTableProgressive(firstSet, followSet)) {
 }
 ```
 
-### LR(1)
+### LR
+
+
+```javascript
+let grammers = [
+    "E  =>  E + T | T",
+    "T => T * F | F",
+    "F => (E) | id",
+]
+// log.logTo(nullLogChannel);
+const lRParser = new lucy.LRParser();
+const nonTerminals = ["E","T","F"];
+const terminals: [string,RegExp][] = [["+",/^\+/],["*",/^\*/],["(",/^\(/],[")",/^\)/],["id",/^id/]];
+lRParser.generateState(grammers,"E",nonTerminals,terminals);
+const stateNode = lRParser.stateGraph;
+const predictTable = lRParser.generateSLR1PredictTable();
+console.log(stateNode,predictTable);
+const predictResult = lRParser.predictInput("id * id + id",predictTable);
+console.log(predictResult);
+```

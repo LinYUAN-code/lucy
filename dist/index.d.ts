@@ -35,6 +35,42 @@ type Process<T> = {
     ruleIndex: number;
     result: T;
 };
+type LRStateNodeItem = {
+    nonTerminal: NonTerminal;
+    derivation: string[];
+    matchPoint: number;
+};
+type LRStateNode = {
+    id: number;
+    items: LRStateNodeItem[];
+    edges: {
+        tocken: NonTerminal | Terminal;
+        next: LRStateNode;
+    }[];
+    acc?: boolean;
+};
+type LRStateNodeForShow = {
+    id: number;
+    items: string[];
+    edges: {
+        tocken: NonTerminal | Terminal;
+        next: LRStateNodeForShow;
+    }[];
+    acc?: boolean;
+};
+type LRPredictTableLine = {
+    id: number;
+    action: Map<Terminal, (number | string[] | string)[]>;
+    goto: Map<NonTerminal, (number | string[] | string)[]>;
+};
+type LRPredictTable = Array<LRPredictTableLine>;
+type LRPredictLine = {
+    stack: number[];
+    symbols: string[];
+    input: string[];
+    move?: string;
+};
+type LRPredictResultTable = Array<LRPredictLine>;
 
 declare class Lexer {
     nonTerminals: Array<string>;
@@ -81,4 +117,17 @@ declare function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Arra
 declare function checkNeedClearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): boolean;
 declare function clearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string>;
 
-export { LL1Parser, Lexer, checkNeedClearRightRecursion, checkNeedliftUpCommonTocken, checkNeedunionGrammers, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };
+declare class LRParser {
+    initialStateNode: LRStateNode | null;
+    allStateNodesMap?: Map<string, LRStateNode>;
+    lexer?: Lexer;
+    grammers?: string[];
+    constructor();
+    generateState(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): void;
+    predictInput(input: string, predictTable: LRPredictTable): LRPredictResultTable;
+    generateLR0PredictTable(): LRPredictTable;
+    generateSLR1PredictTable(): LRPredictTable;
+    get stateGraph(): LRStateNodeForShow;
+}
+
+export { LL1Parser, LRParser, Lexer, checkNeedClearRightRecursion, checkNeedliftUpCommonTocken, checkNeedunionGrammers, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };

@@ -68,11 +68,18 @@ export type LRStateNodeForShow = {
 }
 
 
-export type LRPredictLine = {
+export type LRPredictTableLine = {
   id: number;
   action: Map<Terminal, (number | string[] | string)[]>;
   goto: Map<NonTerminal,(number | string[] | string)[]>;
 };
-export type LRPredidctTable = Array<LRPredictLine>
+export type LRPredictTable = Array<LRPredictTableLine>
 
 
+export type LRPredictLine = {
+  stack: number[];
+  symbols: string[];
+  input: string[];
+  move?: string;
+}
+export type LRPredictResultTable = Array<LRPredictLine>;

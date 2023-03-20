@@ -2,7 +2,7 @@ import generateFirstSet from "@/firstSet";
 import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import { getTockFromSimpleGrammers } from "@/simpleGrammerHelper";
-import { Grammers, LRPredictLine, LRPredidctTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem } from "@/types/type";
+import { Grammers, LRPredictLine, LRPredictResultTable, LRPredictTableLine, LRPredictTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem } from "@/types/type";
 import { EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
 
@@ -129,13 +129,67 @@ export class LRParser  {
             }
         }
     }
+    predictInput(input: string,predictTable: LRPredictTable): LRPredictResultTable {
+        if(!this.lexer) {
+            throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+        }
+        let ans: LRPredictResultTable = [];
+        input = input.replaceAll(/\s/g, "");
+        ans.push({
+            stack: [0],
+            symbols: [],
+            input: [...this.lexer.splitDerivation(input),EndingCharacter],
+        })
+        while(true) {
+            const step = ans[ans.length-1];
+            const next = JSON.parse(JSON.stringify(step)) as LRPredictLine;
+            const stateId = step.stack[step.stack.length - 1];
+
+            const predictLine = predictTable[stateId];
+            const move = predictLine.action.get(step.input[0])!;
+            if(move.length > 1) {
+                throw new Error(`move collision ${move}`);
+            }
+            if(!move.length) {
+                throw new Error(`move is empty ${move}`);
+            }
+            let cMove = move[0] as string;
+            if(cMove === "acc") {
+                step.move = "接受";
+                break;
+            }
+            if(cMove.startsWith("S")) {
+                // shift
+                step.move = `移入${step.input[0]}`;
+                next.symbols.push(next.input.shift()!);
+                next.stack.push(Number(cMove.slice(1)));
+            } else {
+                // reduce
+                step.move = `根据${cMove}归约`;
+                const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
+                const nonTerminal = grammer.split("=>")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
+                for(let i=0;i<derivation.length;i++) {
+                    next.stack.pop();
+                    next.symbols.pop();
+                }
+                next.symbols.push(nonTerminal);
+                // goto
+                const leftStateId = step.stack[next.stack.length - 1];
+                const jPredictLine = predictTable[leftStateId];
+                next.stack.push(jPredictLine.goto.get(nonTerminal)![0] as unknown as number);
+            }
+            ans.push(next);
+        }
+        return ans;
+    }
     generateLR0PredictTable() {
         if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer) {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
         }
-        const predictTable: LRPredidctTable = [];
+        const predictTable: LRPredictTable = [];
         for(let stateNode of this.allStateNodesMap.values()) {
-            let predictLine: LRPredictLine = {
+            let predictLine: LRPredictTableLine = {
                 id: stateNode.id,
                 action: new Map(),
                 goto: new Map()
@@ -163,9 +217,6 @@ export class LRParser  {
                     for(let terminal of this.lexer.terminals) {
                         predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
                     }
-                    // for(let nonTerminal of this.lexer.nonTerminals) {
-                    //     predictLine.goto.get(nonTerminal)!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
-                    // }
                 }
             }
             predictTable.push(predictLine);
@@ -180,10 +231,9 @@ export class LRParser  {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
         }
         const followSet = generateFllowSet(this.lexer,this.grammers);
-        console.log(followSet);
-        const predictTable: LRPredidctTable = [];
+        const predictTable: LRPredictTable = [];
         for(let stateNode of this.allStateNodesMap.values()) {
-            let predictLine: LRPredictLine = {
+            let predictLine: LRPredictTableLine = {
                 id: stateNode.id,
                 action: new Map(),
                 goto: new Map()

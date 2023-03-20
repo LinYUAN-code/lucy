@@ -32,4 +32,6 @@ test("SLR1 ", () => {
     const stateNode = lRParser.stateGraph;
     const predictTable = lRParser.generateSLR1PredictTable();
     log.log(stateNode,predictTable);
+    const predictResult = lRParser.predictInput("id * id + id",predictTable);
+    log.log(predictResult);
 })

@@ -6,8 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <!-- <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script> -->
-  <script src="../dist/index.iife.js"></script>
+  <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script>
+  <!-- <script src="../dist/index.iife.js"></script> -->
   <script>
     const testCase = {
       nonTerminalSymbol: ["E'", "E", "T'", "T", "F"],
@@ -58,12 +58,11 @@
       console.log(process);
     }
     {
+      console.log("-------------------")
       const grammers = [
-        "S  =>  AB",
-        "A  =>  Ca | ε",
-        "B  =>  cB'",
-        "B' =>  aACB' | ε",
-        "C  =>  b | ε",
+        "S => A a | b",
+        "A => b d A' | A'",
+        "A' => a d A' | c A' | ε",
       ];
       const { nonTerminals, terminals } =
         lucy.getTockFromSimpleGrammers(grammers);

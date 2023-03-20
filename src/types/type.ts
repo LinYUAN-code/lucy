@@ -53,7 +53,8 @@ export type LRStateNode = {
   edges: {
     tocken: NonTerminal | Terminal;
     next: LRStateNode;
-  }[]
+  }[];
+  acc?: boolean; //表示是否是接受状态
 }
 
 export type LRStateNodeForShow = {
@@ -62,7 +63,16 @@ export type LRStateNodeForShow = {
   edges: {
     tocken: NonTerminal | Terminal;
     next: LRStateNodeForShow;
-  }[]
+  }[];
+  acc?: boolean; //表示是否是接受状态
 }
+
+
+export type LRPredictLine = {
+  id: number;
+  action: Map<Terminal, (number | string[] | string)[]>;
+  goto: Map<NonTerminal,(number | string[] | string)[]>;
+};
+export type LRPredidctTable = Array<LRPredictLine>
 
 

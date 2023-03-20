@@ -1,10 +1,16 @@
+import generateFirstSet from "@/firstSet";
+import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import { getTockFromSimpleGrammers } from "@/simpleGrammerHelper";
-import { Grammers, LRStateNode, LRStateNodeForShow, LRStateNodeItem } from "@/types/type";
+import { Grammers, LRPredictLine, LRPredidctTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem } from "@/types/type";
+import { EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
 
-export class LRStateMachine  {
+export class LRParser  {
     initialStateNode: LRStateNode | null;
+    allStateNodesMap?: Map<string,LRStateNode>;
+    lexer?: Lexer;
+    grammers?: string[];
     constructor() {
         this.initialStateNode = null;
     }
@@ -17,7 +23,8 @@ export class LRStateMachine  {
         const AugumentStart = "Augument_S";
         log.log("[nonTerminals]", nonTerminals);
         log.log("[terminals]", terminals);
-        let lexer = new Lexer(terminals, nonTerminals);
+        this.grammers = grammers;
+        this.lexer = new Lexer(terminals, nonTerminals);
 
         const nonTerminals2DerivationMap = new Map<string,string[][]>();
         for (let grammer of grammers) {
@@ -25,7 +32,7 @@ export class LRStateMachine  {
             const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
             const nonTerminal = arr[0];
             const derivations = arr[1].split("|").filter(v => v).map(derivation => {
-                return lexer.splitDerivation(derivation);
+                return this.lexer!.splitDerivation(derivation);
             });
             nonTerminals2DerivationMap.set(nonTerminal, derivations);
         }
@@ -40,8 +47,9 @@ export class LRStateMachine  {
             }],
             edges: [],
         }
-        expandStateItems(this.initialStateNode.items,nonTerminals2DerivationMap,lexer);
+        expandStateItems(this.initialStateNode.items,nonTerminals2DerivationMap,this.lexer);
         const allStateNodesMap = new Map<string,LRStateNode>();
+        this.allStateNodesMap = allStateNodesMap;
         allStateNodesMap.set(stateItemsToString(this.initialStateNode.items),this.initialStateNode);
         const vis: boolean[] = [];
         let preSize = 0;
@@ -51,6 +59,19 @@ export class LRStateMachine  {
             for(let state of allStateNodesMap.values()) {
                 if(vis[state.id]) continue;
                 vis[state.id] = true;
+                // 判断是否可以到接受状态
+                for(let item of state.items) {
+                    if(item.nonTerminal === AugumentStart && item.matchPoint === 1) {
+                        state.edges.push({
+                            tocken: EndingCharacter,
+                            next: {
+                                id: -1,
+                                items: [],
+                                edges: [],
+                            }
+                        })
+                    }
+                }
                 for(let nonTerminal of nonTerminals) {
                     let matchItems: LRStateNodeItem[] = [];
                     for(let item of state.items) {
@@ -64,7 +85,7 @@ export class LRStateMachine  {
                         } 
                     }
                     if(!matchItems.length)continue;
-                    expandStateItems(matchItems,nonTerminals2DerivationMap,lexer);
+                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer);
                     const key = stateItemsToString(matchItems);
                     if(!allStateNodesMap.has(key)) {
                         allStateNodesMap.set(key,{
@@ -91,7 +112,7 @@ export class LRStateMachine  {
                         } 
                     }
                     if(!matchItems.length)continue;
-                    expandStateItems(matchItems,nonTerminals2DerivationMap,lexer);
+                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer);
                     const key = stateItemsToString(matchItems);
                     if(!allStateNodesMap.has(key)) {
                         allStateNodesMap.set(key,{
@@ -107,6 +128,104 @@ export class LRStateMachine  {
                 }
             }
         }
+    }
+    generateLR0PredictTable() {
+        if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer) {
+            throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+        }
+        const predictTable: LRPredidctTable = [];
+        for(let stateNode of this.allStateNodesMap.values()) {
+            let predictLine: LRPredictLine = {
+                id: stateNode.id,
+                action: new Map(),
+                goto: new Map()
+            };
+            for(let nonTerminal  of this.lexer.nonTerminals) {
+                predictLine.goto.set(nonTerminal,[]);
+            }
+            for(let terminal  of this.lexer.terminals) {
+                predictLine.action.set(terminal[0],[]);
+            }
+            predictLine.action.set(EndingCharacter,[]);
+            for(let edge of stateNode.edges) {
+                if(edge.tocken === EndingCharacter) {
+                    predictLine.action.get(edge.tocken)!.push("acc");
+                    continue;
+                }
+                if(this.lexer.isTerminal(edge.tocken)) {
+                    predictLine.action.get(edge.tocken)!.push(`S${edge.next.id}`);
+                } else {
+                    predictLine.goto.get(edge.tocken)!.push(edge.next.id);
+                }
+            }
+            for(let item of stateNode.items) {
+                if(item.matchPoint === item.derivation.length) { // reduce
+                    for(let terminal of this.lexer.terminals) {
+                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                    }
+                    // for(let nonTerminal of this.lexer.nonTerminals) {
+                    //     predictLine.goto.get(nonTerminal)!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                    // }
+                }
+            }
+            predictTable.push(predictLine);
+        }   
+        predictTable.sort((a,b)=>{
+            return a.id - b.id;
+        });
+        return predictTable;
+    }
+    generateSLR1PredictTable() {
+        if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer || !this.grammers) {
+            throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+        }
+        const followSet = generateFllowSet(this.lexer,this.grammers);
+        console.log(followSet);
+        const predictTable: LRPredidctTable = [];
+        for(let stateNode of this.allStateNodesMap.values()) {
+            let predictLine: LRPredictLine = {
+                id: stateNode.id,
+                action: new Map(),
+                goto: new Map()
+            };
+            for(let nonTerminal  of this.lexer.nonTerminals) {
+                predictLine.goto.set(nonTerminal,[]);
+            }
+            for(let terminal  of this.lexer.terminals) {
+                predictLine.action.set(terminal[0],[]);
+            }
+            predictLine.action.set(EndingCharacter,[]);
+            for(let edge of stateNode.edges) {
+                if(edge.tocken === EndingCharacter) {
+                    predictLine.action.get(edge.tocken)!.push("acc");
+                    continue;
+                }
+                if(this.lexer.isTerminal(edge.tocken)) {
+                    predictLine.action.get(edge.tocken)!.push(`S${edge.next.id}`);
+                } else {
+                    predictLine.goto.get(edge.tocken)!.push(edge.next.id);
+                }
+            }
+            for(let item of stateNode.items) {
+                if(item.matchPoint === item.derivation.length) { // reduce
+                    let followCh: string[] = [];
+                    for(let setLine of followSet) {
+                        if(setLine.tocken === item.nonTerminal) {
+                            followCh = [...setLine.terminals.values()];
+                            break;
+                        }
+                    }
+                    for(let terminal of followCh) {
+                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                    }
+                }
+            }
+            predictTable.push(predictLine);
+        }   
+        predictTable.sort((a,b)=>{
+            return a.id - b.id;
+        });
+        return predictTable;
     }
     get stateGraph(): LRStateNodeForShow {
         const vis: any[] = [];

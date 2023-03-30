@@ -15,20 +15,24 @@ export default [
             {
                 file: "dist/index.esm.js",
                 format: "esm",
+                sourcemap: "inline",
             },
             {
                 file: "dist/index.umd.js",
                 format: "umd",
                 name: "index",
+                sourcemap: "inline",
             },
             {
                 file: "dist/index.iife.js",
                 format: "iife",
                 name: "lucy",
+                sourcemap: "inline",
             },
             {
                 file: "dist/index.cjs.js",
                 format: "cjs",
+                sourcemap: "inline",
             },
         ],
         plugins: [

@@ -75,6 +75,26 @@
       console.log(predictTable);
     }
     {
+      console.log("--------AA-----------")
+      const grammers = [
+        "A => A'' | b d A''",
+        "A' => c | a d",
+        "A'' => A' A'' | ε",
+      ];
+      const { nonTerminals, terminals } =
+        lucy.getTockFromSimpleGrammers(grammers);
+      const ll1Parser = new lucy.LL1Parser(terminals, nonTerminals, grammers);
+      const firstSet = ll1Parser.getFirstSet();
+      const followSet = ll1Parser.getFollowSet(firstSet);
+      // const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+      // const predictResult = ll1Parser.getPredictProcess("b d","A",predictTable)
+      const predictResult = ll1Parser.getPredictProcess("b d","A")
+      console.log(firstSet);
+      console.log(followSet);
+      console.log(predictTable);
+      console.log(predictResult);
+    }
+    {
       let grammers = [
         "S  =>  AB",
         "S  =>  SCa | h",
@@ -121,6 +141,22 @@
       console.log(stateNode,predictTable);
       // 分析结果
       const predictResult = lRParser.predictInput("id * id + id",predictTable);
+      console.log(predictResult);
+    }
+    {
+      console.log("--------AA-----------")
+      const grammers = [
+        "A => 1",
+      ];
+      const ll1Parser = new lucy.LL1Parser([['1',/^1/]], ['A'], grammers);
+      const firstSet = ll1Parser.getFirstSet();
+      const followSet = ll1Parser.getFollowSet(firstSet);
+      // const predictTable = ll1Parser.getPredictTable(firstSet, followSet);
+      // const predictResult = ll1Parser.getPredictProcess("b d","A",predictTable)
+      const predictResult = ll1Parser.getPredictProcess("1","A")
+      console.log(firstSet);
+      console.log(followSet);
+      console.log(predictTable);
       console.log(predictResult);
     }
   </script>

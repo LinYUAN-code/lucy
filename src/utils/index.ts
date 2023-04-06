@@ -28,12 +28,12 @@ export function isSetIncludes(a: Set<unknown>, b: Set<unknown>): boolean {
 
 export function safeRegCharacter(char: string): string {
     switch (char) {
-        case "+":
-        case "*":
-        case "(":
-        case ")":
-            return `\\${char}`;
-        default:
-            return char;
+    case "+":
+    case "*":
+    case "(":
+    case ")":
+        return `\\${char}`;
+    default:
+        return char;
     }
 }

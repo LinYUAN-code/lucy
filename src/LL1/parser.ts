@@ -33,6 +33,14 @@ export default class LL1Parser {
         if (!predictTable) {
             predictTable = generatorPredictTable(this.lexer, this.textGrammers, this.getFirstSet(), this.getFollowSet());
         }
+        if(!this.lexer.nonTerminals.some(nonTerminal=>{
+            if(parseStartNonTerminal === nonTerminal) {
+                return true;
+            }
+            return false;
+        })) {
+            throw new Error("1");
+        }
         return predict(this.lexer, predictTable, input, parseStartNonTerminal);
     }
     checkPredickTableIsValid(predictTable: PredictTable): boolean {
@@ -60,3 +68,5 @@ export default class LL1Parser {
         return generatePredictTableProgressive(this.lexer, this.textGrammers, firstSet, followSet);
     }
 }
+
+

@@ -72,7 +72,6 @@ export default function generatorPredictTable(
             }
         }
     })
-
     return predictTable;
 }
 
@@ -133,7 +132,7 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
             const terminal = lexer.next();
             const tableLine: PredictLine = nonTerminal2TableRowMap.get(tocken)!;
             const grammer: Grammer = tableLine!.terminal2Derivation.get(terminal.tocken);
-            if (grammer.derivations.length !== 1) {
+            if (grammer?.derivations?.length !== 1) {
                 throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
             }
             currentState.parseAction = `Predict ${grammer.nonTerminal} => ${grammer.derivations[0].join(" ")}`;
@@ -146,8 +145,8 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
             currentState.remainingInput = lexer.remainString();
         }
     } catch(e) {
-        console.error(e);
-        return predictProcess;
+        (e as any).value = predictProcess;
+        throw e;
     }
     return predictProcess;
 }

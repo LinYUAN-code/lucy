@@ -1,4 +1,4 @@
-import{_ as G,u as w,a as B,r as C,c as D,d as i,o as e,e as s,g as t,f as _,h as b,k as L,t as n,m as c,F as p,j as g,i as u,y as I,z as T}from"./index-5b4ceb49.js";const d={simple:{text:"默认模式",statement:`该模式仅支持教学意义的简单文法，所有非终结符的格式为大写字母（A-Z）或带上标的大写字母（A'-Z'、A''-Z''...）,
+import{_ as G,u as w,a as B,r as C,c as D,d as i,o as e,e as s,g as t,f as _,h as b,k as L,t as n,m as c,F as p,j as g,i as u,y as I,z as T}from"./index-9387c24e.js";const d={simple:{text:"默认模式",statement:`该模式仅支持教学意义的简单文法，所有非终结符的格式为大写字母（A-Z）或带上标的大写字母（A'-Z'、A''-Z''...）,
         所有终结符为小写字母（a-z）或Greek Symbols（ε,μ...），如需要自定义终结符和非终结符，请切换自定义模式`,grammars:["A => A c | A a d | b d | ε",`A => A c
                     | A a d
                     | b d

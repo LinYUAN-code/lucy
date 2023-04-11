@@ -10,11 +10,6 @@ jobs:
       uses: actions/checkout@v2
       with:
         repository: zhixiuyue/parser_vue3
-    - name: show-tocken
-      run: echo ${{ secrets.ACCESS_TOKEN }}
-    - name: ls
-      run: |
-        ls
     - name: Setup Node
       uses: actions/setup-node@v1
       with:
@@ -45,5 +40,5 @@ jobs:
       - name: Deploy to GitHub Pages
         uses: peaceiris/actions-gh-pages@v3
         with:
-          github_token: ${{ secrets.ACCESS_TOKEN }}
+          github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./demo_for_use

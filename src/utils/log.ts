@@ -71,7 +71,7 @@ export const nullLogChannel = new NullLogChannel();
 let logLevel_init = LogLevel.Normal
 var __env__ = "";
 switch (__env__) {
-    case "prod":
-        logLevel_init = LogLevel.Error
+case "prod":
+    logLevel_init = LogLevel.Error
 }
 export default new Logger(logLevel_init)

@@ -83,3 +83,11 @@ export type LRPredictLine = {
   move?: string;
 }
 export type LRPredictResultTable = Array<LRPredictLine>;
+
+
+export type AstNode = {
+  id: any;
+  text: string;
+  children?: AstNode[];
+  check?: boolean;
+}

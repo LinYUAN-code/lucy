@@ -1,6 +1,6 @@
 import { getDerivationFirstSet } from "@/firstSet";
 import Lexer from "@/lexer";
-import { Grammer, GrammerSet, GrammerSetLine, NonTerminal, PredictLine, PredictProcessLine, PredictTable, Process, Rule, Terminal } from "@/types/type";
+import { AstNode, Grammer, GrammerSet, GrammerSetLine, NonTerminal, PredictLine, PredictProcessLine, PredictTable, Process, Rule, Terminal } from "@/types/type";
 import { transferString2Grammers } from "@/utils";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
@@ -95,6 +95,13 @@ export function checkPredickTableIsValid(lexer: Lexer, table: PredictTable): boo
 export function predict(lexer: Lexer, table: PredictTable, _input: string, parseStartNonTerminal: NonTerminal): Array<PredictProcessLine> {
     let input = _input.replaceAll(/\s/g, "");
     const predictProcess: Array<PredictProcessLine> = [];
+    let astIdx = 1;
+    const astNode: AstNode = {
+        id: 0,
+        text: parseStartNonTerminal,
+        check: false,
+    };
+    const astStack = [astNode];
     let currentState: PredictProcessLine = {
         parseStack: [EndingCharacter, parseStartNonTerminal],
         remainingInput: _input,
@@ -123,6 +130,15 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
                     if (currentState.parseStack.length === 0) {
                         break;
                     }
+                    const astNode = astStack.pop()!;
+                    if(!astNode.children) {
+                        astNode.children = [];
+                    }
+                    astNode.children.push({
+                        id: astIdx++,
+                        text: terminal.origin,
+                        check: false,
+                    })
                 } else {
                     throw new Error(`[predict error] terminal match error tocken: ${tocken} stack: ${currentState.parseStack} remainingInput: ${lexer.remainString()}`);
                 }
@@ -140,7 +156,20 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
             predictProcess.push(currentState);
             currentState = JSON.parse(JSON.stringify(currentState));
             currentState.parseStack.pop();
-            currentState.parseStack.push(...grammer.derivations[0].filter(char => char !== EmptyCharacter).reverse());
+            const astNode = astStack.pop()!;
+            const derivation = grammer.derivations[0].filter(char => char !== EmptyCharacter);
+            if(!astNode.children) {
+                astNode.children = [];
+            }
+            for(let tocken of derivation) {
+                astNode.children.push({
+                    id: astIdx++,
+                    text: tocken,
+                    check: false,
+                })
+            }
+            astStack.push(...[...astNode.children].reverse());
+            currentState.parseStack.push(...derivation.reverse());
             currentState.parseAction = "";
             currentState.remainingInput = lexer.remainString();
         }
@@ -148,6 +177,7 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
         (e as any).value = predictProcess;
         throw e;
     }
+    (predictProcess as any).astNode = astNode
     return predictProcess;
 }
 

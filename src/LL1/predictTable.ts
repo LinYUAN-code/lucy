@@ -173,9 +173,9 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
             currentState.parseAction = "";
             currentState.remainingInput = lexer.remainString();
         }
-    } catch(e) {
-        (e as any).value = predictProcess;
-        throw e;
+    } catch(e: any) {
+        currentState.parseAction = e.toString();
+        predictProcess.push(currentState);
     }
     (predictProcess as any).astNode = astNode
     return predictProcess;

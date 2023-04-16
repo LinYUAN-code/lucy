@@ -6,7 +6,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Document</title>
   </head>
-  <script src="https://linyuan-code.github.io/lucy/dist/index.iife.js"></script>
+  <script src="https://github.com/LinYUAN-code/lucy/blob/master/dist/index.iife.js"></script>
   <!-- <script src="../dist/index.iife.js"></script> -->
   <script>
     const testCase = {
@@ -134,6 +134,9 @@
       const lRParser = new lucy.LRParser();
       const nonTerminals = ["E","T","F"];
       const terminals = [["+",/^\+/],["*",/^\*/],["(",/^\(/],[")",/^\)/],["id",/^id/]];
+      // for(let tmp of lRParser.generateStateProgressive(grammers,"E",nonTerminals,terminals)) {
+      //   // render lRParser.stateGraph
+      // }
       lRParser.generateState(grammers,"E",nonTerminals,terminals);
       // 状态机图
       const stateNode = lRParser.stateGraph;

@@ -129,6 +129,125 @@ export class LRParser  {
             }
         }
     }
+    *generateStateProgressive(grammers: string[], parseStartNonTerminal: string,nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): IterableIterator<undefined> {
+        if (!nonTerminals || !terminals) {
+            const tockenAnaRes = getTockFromSimpleGrammers(grammers);
+            nonTerminals = tockenAnaRes.nonTerminals;
+            terminals = tockenAnaRes.terminals;
+        }
+        const AugumentStart = "Augument_S";
+        log.log("[nonTerminals]", nonTerminals);
+        log.log("[terminals]", terminals);
+        this.grammers = grammers;
+        this.lexer = new Lexer(terminals, nonTerminals);
+
+        const nonTerminals2DerivationMap = new Map<string,string[][]>();
+        for (let grammer of grammers) {
+            grammer = grammer.replaceAll(/\s/g, "");
+            const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
+            const nonTerminal = arr[0];
+            const derivations = arr[1].split("|").filter(v => v).map(derivation => {
+                return this.lexer!.splitDerivation(derivation);
+            });
+            nonTerminals2DerivationMap.set(nonTerminal, derivations);
+        }
+        log.log(nonTerminals2DerivationMap);
+
+        this.initialStateNode = {
+            id: 0,
+            items: [{
+                nonTerminal: AugumentStart,
+                derivation: [parseStartNonTerminal],
+                matchPoint: 0,
+            }],
+            edges: [],
+        }
+        expandStateItems(this.initialStateNode.items,nonTerminals2DerivationMap,this.lexer);
+        yield;
+        const allStateNodesMap = new Map<string,LRStateNode>();
+        this.allStateNodesMap = allStateNodesMap;
+        allStateNodesMap.set(stateItemsToString(this.initialStateNode.items),this.initialStateNode);
+        const vis: boolean[] = [];
+        let preSize = 0;
+        while(true) {
+            if(allStateNodesMap.size == preSize)break;
+            preSize = allStateNodesMap.size;
+            for(let state of allStateNodesMap.values()) {
+                if(vis[state.id]) continue;
+                vis[state.id] = true;
+                // 判断是否可以到接受状态
+                for(let item of state.items) {
+                    if(item.nonTerminal === AugumentStart && item.matchPoint === 1) {
+                        state.edges.push({
+                            tocken: EndingCharacter,
+                            next: {
+                                id: -1,
+                                items: [],
+                                edges: [],
+                            }
+                        })
+                    }
+                }
+                for(let nonTerminal of nonTerminals) {
+                    let matchItems: LRStateNodeItem[] = [];
+                    for(let item of state.items) {
+                        if(item.derivation.length === item.matchPoint)continue;
+                        if(item.derivation[item.matchPoint] === nonTerminal) {
+                            matchItems.push({
+                                nonTerminal: item.nonTerminal,
+                                derivation: item.derivation,
+                                matchPoint: item.matchPoint+1,
+                            })
+                        } 
+                    }
+                    if(!matchItems.length)continue;
+                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer);
+                    const key = stateItemsToString(matchItems);
+                    if(!allStateNodesMap.has(key)) {
+                        allStateNodesMap.set(key,{
+                            id: allStateNodesMap.size,
+                            items: matchItems,
+                            edges: [],
+                        })
+                    }
+                    state.edges.push({
+                        tocken: nonTerminal,
+                        next: allStateNodesMap.get(key)!,
+                    });
+                    yield;
+                }
+                for(let terminal of terminals) {
+                    let matchItems: LRStateNodeItem[] = [];
+                    for(let item of state.items) {
+                        if(item.derivation.length === item.matchPoint)continue;
+                        if(item.derivation[item.matchPoint] === terminal[0]) {
+                            matchItems.push({
+                                nonTerminal: item.nonTerminal,
+                                derivation: item.derivation,
+                                matchPoint: item.matchPoint+1,
+                            })
+                        } 
+                    }
+                    if(!matchItems.length)continue;
+                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer);
+                    const key = stateItemsToString(matchItems);
+                    if(!allStateNodesMap.has(key)) {
+                        allStateNodesMap.set(key,{
+                            id: allStateNodesMap.size,
+                            items: matchItems,
+                            edges: [],
+                        })
+                    }
+                    state.edges.push({
+                        tocken: terminal[0],
+                        next: allStateNodesMap.get(key)!,
+                    });
+                    yield;
+                }
+            }
+        }
+        return;
+    }
     predictInput(input: string,predictTable: LRPredictTable): LRPredictResultTable {
         if(!this.lexer) {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");

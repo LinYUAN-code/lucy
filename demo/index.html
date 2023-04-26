@@ -7,7 +7,7 @@
     <title>Document</title>
   </head>
   <script src="https://github.com/LinYUAN-code/lucy/blob/master/dist/index.iife.js"></script>
-  <!-- <script src="../dist/index.iife.js"></script> -->
+  <script src="../dist/index.iife.js"></script>
   <script>
     const testCase = {
       nonTerminalSymbol: ["E'", "E", "T'", "T", "F"],
@@ -145,6 +145,27 @@
       console.log(stateNode,predictTable);
       // 分析结果
       const predictResult = lRParser.predictInput("id * id + id",predictTable);
+      console.log(predictResult);
+
+
+    }
+    {
+      console.log("---[LR0]---");
+      let grammers = [
+        `A => b A'`,
+        `A' => a A' | ε`
+      ]
+      const lRParser = new lucy.LRParser();
+      const { nonTerminals, terminals } =
+        lucy.getTockFromSimpleGrammers(grammers);
+      lRParser.generateState(grammers,"A",nonTerminals,terminals);
+      // 状态机图
+      const stateNode = lRParser.stateGraph;
+      // 分析表
+      const predictTable = lRParser.generateLR0PredictTable();
+      console.log(stateNode,predictTable);
+      // 分析结果
+      const predictResult = lRParser.predictInput("ba",predictTable);
       console.log(predictResult);
     }
     {

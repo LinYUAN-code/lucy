@@ -103,6 +103,7 @@ declare class LL1Parser {
     checkIsLL0(): boolean;
     getFirstSetProgressive(): IterableIterator<Rule | Process<GrammerSet>>;
     getFollowSetProgressive(firstSet?: GrammerSet): IterableIterator<Rule | Process<GrammerSet>>;
+    getPredictProcessProgressive(input: string, parseStartNonTerminal: string, predictTable?: PredictTable): IterableIterator<Array<PredictProcessLine>>;
     getPredictTableProgressive(firstSet?: GrammerSet, followSet?: GrammerSet): IterableIterator<Rule | Process<PredictTable>>;
 }
 

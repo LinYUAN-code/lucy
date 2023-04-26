@@ -2,7 +2,7 @@ import generateFirstSet, { generateFirstSetProgressive } from "@/firstSet";
 import generateFllowSet, { generateFllowSetProgressive } from "@/followSet";
 import Lexer from "@/lexer";
 import { GrammerSet, PredictProcessLine, PredictTable, Process, Rule } from "@/types/type";
-import generatorPredictTable, { checkPredickTableIsValid, generatePredictTableProgressive, predict } from "./predictTable";
+import generatorPredictTable, { checkPredickTableIsValid, generatePredictTableProgressive, predict, predictProgressive } from "./predictTable";
 
 export default class LL1Parser {
     public lexer: Lexer;
@@ -57,6 +57,20 @@ export default class LL1Parser {
             firstSet = this.getFirstSet();
         }
         return generateFllowSetProgressive(this.lexer, this.textGrammers, firstSet);
+    }
+    getPredictProcessProgressive(input: string, parseStartNonTerminal: string, predictTable?: PredictTable): IterableIterator<Array<PredictProcessLine>> {
+        if (!predictTable) {
+            predictTable = generatorPredictTable(this.lexer, this.textGrammers, this.getFirstSet(), this.getFollowSet());
+        }
+        if(!this.lexer.nonTerminals.some(nonTerminal=>{
+            if(parseStartNonTerminal === nonTerminal) {
+                return true;
+            }
+            return false;
+        })) {
+            throw new Error("1");
+        }
+        return predictProgressive(this.lexer, predictTable, input, parseStartNonTerminal);
     }
     getPredictTableProgressive(firstSet?: GrammerSet, followSet?: GrammerSet): IterableIterator<Rule | Process<PredictTable>> {
         if (!firstSet) {

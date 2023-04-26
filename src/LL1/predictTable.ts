@@ -120,7 +120,7 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
                 const terminal = lexer.next();
                 if (tocken === terminal.tocken) {
                     // match success
-                    currentState.parseAction = `match ${terminal.tocken} ${terminal.origin}`
+                    currentState.parseAction = `match ${terminal.tocken}${terminal.tocken===terminal.origin?"":": "+terminal.origin}`
                     predictProcess.push(currentState);
                     currentState = JSON.parse(JSON.stringify(currentState));
                     lexer.pop();
@@ -140,7 +140,8 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
                         check: false,
                     })
                 } else {
-                    throw new Error(`[predict error] terminal match error tocken: ${tocken} stack: ${currentState.parseStack} remainingInput: ${lexer.remainString()}`);
+                    throw new Error(`[预测错误] 非终结符匹配错误: ${tocken} stack: ${currentState.parseStack} 剩余字符串: ${lexer.remainString()}`);
+                    // throw new Error(`[predict error] terminal match error tocken: ${tocken} stack: ${currentState.parseStack} remainingInput: ${lexer.remainString()}`);
                 }
                 continue;
             }
@@ -149,7 +150,8 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
             const tableLine: PredictLine = nonTerminal2TableRowMap.get(tocken)!;
             const grammer: Grammer = tableLine!.terminal2Derivation.get(terminal.tocken);
             if (grammer?.derivations?.length !== 1) {
-                throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
+                throw new Error(`[预测错误] 分析输入错误  终结符: ${terminal}   剩余字符串: ${lexer.remainString()} 文法: ${grammer} `);
+                // throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
             }
             currentState.parseAction = `Predict ${grammer.nonTerminal} => ${grammer.derivations[0].join(" ")}`;
             log.log("[predict State]", currentState);
@@ -181,6 +183,100 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
     return predictProcess;
 }
 
+export function* predictProgressive(lexer: Lexer, table: PredictTable, _input: string, parseStartNonTerminal: NonTerminal): IterableIterator<Array<PredictProcessLine>> {
+    let input = _input.replaceAll(/\s/g, "");
+    const predictProcess: Array<PredictProcessLine> = [];
+    let astIdx = 1;
+    const astNode: AstNode = {
+        id: 0,
+        text: parseStartNonTerminal,
+        check: false,
+    };
+    (predictProcess as any).astNode = astNode
+    const astStack = [astNode];
+    let currentState: PredictProcessLine = {
+        parseStack: [EndingCharacter, parseStartNonTerminal],
+        remainingInput: _input,
+        parseAction: "",
+    }
+    lexer.setSource(input);
+    const nonTerminal2TableRowMap = new Map<NonTerminal, PredictLine>();
+    table.forEach(tableLine => {
+        nonTerminal2TableRowMap.set(tableLine.nonTerminal, tableLine);
+    })
+    yield predictProcess;
+    try {
+        while (true) {
+            // 取出栈顶元素
+            const tocken = currentState.parseStack[currentState.parseStack.length - 1];
+            if (lexer.isTerminal(tocken)) {
+                const terminal = lexer.next();
+                if (tocken === terminal.tocken) {
+                    // match success
+                    currentState.parseAction = `match ${terminal.tocken}${terminal.tocken===terminal.origin?"":": "+terminal.origin}`
+                    predictProcess.push(currentState);
+                    currentState = JSON.parse(JSON.stringify(currentState));
+                    lexer.pop();
+                    currentState.parseAction = "";
+                    currentState.remainingInput = lexer.remainString();
+                    currentState.parseStack.pop();
+                    if (currentState.parseStack.length === 0) {
+                        break;
+                    }
+                    const astNode = astStack.pop()!;
+                    if(!astNode.children) {
+                        astNode.children = [];
+                    }
+                    astNode.children.push({
+                        id: astIdx++,
+                        text: terminal.origin,
+                        check: false,
+                    })
+                } else {
+                    throw new Error(`[预测错误] 非终结符匹配错误: ${tocken} stack: ${currentState.parseStack} 剩余字符串: ${lexer.remainString()}`);
+                    // throw new Error(`[predict error] terminal match error tocken: ${tocken} stack: ${currentState.parseStack} remainingInput: ${lexer.remainString()}`);
+                }
+                yield predictProcess;
+                continue;
+            }
+        
+            const terminal = lexer.next();
+            const tableLine: PredictLine = nonTerminal2TableRowMap.get(tocken)!;
+            const grammer: Grammer = tableLine!.terminal2Derivation.get(terminal.tocken);
+            if (grammer?.derivations?.length !== 1) {
+                throw new Error(`[预测错误] 分析输入错误  终结符: ${terminal}   剩余字符串: ${lexer.remainString()} 文法: ${grammer} `);
+                // throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
+            }
+            currentState.parseAction = `Predict ${grammer.nonTerminal} => ${grammer.derivations[0].join(" ")}`;
+            log.log("[predict State]", currentState);
+            predictProcess.push(currentState);
+            currentState = JSON.parse(JSON.stringify(currentState));
+            currentState.parseStack.pop();
+            const astNode = astStack.pop()!;
+            const derivation = grammer.derivations[0].filter(char => char !== EmptyCharacter);
+            if(!astNode.children) {
+                astNode.children = [];
+            }
+            for(let tocken of derivation) {
+                astNode.children.push({
+                    id: astIdx++,
+                    text: tocken,
+                    check: false,
+                })
+            }
+            astStack.push(...[...astNode.children].reverse());
+            currentState.parseStack.push(...derivation.reverse());
+            currentState.parseAction = "";
+            currentState.remainingInput = lexer.remainString();
+            yield predictProcess;
+        }
+    } catch(e: any) {
+        currentState.parseAction = e.toString();
+        predictProcess.push(currentState);
+    }
+    (predictProcess as any).astNode = astNode
+    return predictProcess;
+}
 
 export function* generatePredictTableProgressive(
     lexer: Lexer,

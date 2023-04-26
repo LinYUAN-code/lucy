@@ -2,8 +2,8 @@ import generateFirstSet from "@/firstSet";
 import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import { getTockFromSimpleGrammers } from "@/simpleGrammerHelper";
-import { Grammers, LRPredictLine, LRPredictResultTable, LRPredictTableLine, LRPredictTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem } from "@/types/type";
-import { EndingCharacter } from "@/utils/const";
+import { Grammers, LRPredictLine, LRPredictResultTable, LRPredictTableLine, LRPredictTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem, PredictTable, Process, Rule } from "@/types/type";
+import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
 
 export class LRParser  {
@@ -265,12 +265,18 @@ export class LRParser  {
             const stateId = step.stack[step.stack.length - 1];
 
             const predictLine = predictTable[stateId];
-            const move = predictLine.action.get(step.input[0])!;
+            let emptyCharacterFlag = false;
+            let move = predictLine.action.get(step.input[0])!;
             if(move.length > 1) {
                 throw new Error(`move collision ${move}`);
             }
             if(!move.length) {
-                throw new Error(`move is empty ${move}`);
+                if(predictLine.action.get(EmptyCharacter)?.length === 1) {
+                    move = predictLine.action.get(EmptyCharacter)!;
+                    emptyCharacterFlag = true;
+                } else {
+                    throw new Error(`move is empty ${move}`);
+                }
             }
             let cMove = move[0] as string;
             if(cMove === "acc") {
@@ -280,7 +286,11 @@ export class LRParser  {
             if(cMove.startsWith("S")) {
                 // shift
                 step.move = `移入${step.input[0]}`;
-                next.symbols.push(next.input.shift()!);
+                if(emptyCharacterFlag) {
+                    next.symbols.push(EmptyCharacter);
+                } else {
+                    next.symbols.push(next.input.shift()!);
+                }
                 next.stack.push(Number(cMove.slice(1)));
             } else {
                 // reduce
@@ -345,6 +355,53 @@ export class LRParser  {
         });
         return predictTable;
     }
+    // *generateLR0PredictTableProgressive(): IterableIterator<Rule | Process<PredictTable>> {
+    //     if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer) {
+    //         throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+    //     }
+    //     yield [
+    //         "1. 对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = A -> u",
+    //         "2. 若 First(u) 含 ε ，则对 Follow(A) 中的所有符号 a （可含 $ ），置 M[A, a] = A -> u"
+    //     ]
+    //     const predictTable: LRPredictTable = [];
+    //     for(let stateNode of this.allStateNodesMap.values()) {
+    //         let predictLine: LRPredictTableLine = {
+    //             id: stateNode.id,
+    //             action: new Map(),
+    //             goto: new Map()
+    //         };
+    //         for(let nonTerminal  of this.lexer.nonTerminals) {
+    //             predictLine.goto.set(nonTerminal,[]);
+    //         }
+    //         for(let terminal  of this.lexer.terminals) {
+    //             predictLine.action.set(terminal[0],[]);
+    //         }
+    //         predictLine.action.set(EndingCharacter,[]);
+    //         for(let edge of stateNode.edges) {
+    //             if(edge.tocken === EndingCharacter) {
+    //                 predictLine.action.get(edge.tocken)!.push("acc");
+    //                 continue;
+    //             }
+    //             if(this.lexer.isTerminal(edge.tocken)) {
+    //                 predictLine.action.get(edge.tocken)!.push(`S${edge.next.id}`);
+    //             } else {
+    //                 predictLine.goto.get(edge.tocken)!.push(edge.next.id);
+    //             }
+    //         }
+    //         for(let item of stateNode.items) {
+    //             if(item.matchPoint === item.derivation.length) { // reduce
+    //                 for(let terminal of this.lexer.terminals) {
+    //                     predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+    //                 }
+    //             }
+    //         }
+    //         predictTable.push(predictLine);
+    //     }   
+    //     predictTable.sort((a,b)=>{
+    //         return a.id - b.id;
+    //     });
+    //     return predictTable;
+    // }
     generateSLR1PredictTable() {
         if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer || !this.grammers) {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");

@@ -38,7 +38,7 @@ export default class Lexer {
                 }
             }
         }
-        throw new Error(`[lexer next]: match next Terminal error \n sourecInput: ${this.source}\n remainString: ${this.source.slice(this.currentColumn)}`);
+        throw new Error(`[词法分析]: 匹配下一个tocken失败  源输入字符串: ${this.source} 剩余字符串: ${this.source.slice(this.currentColumn)}`);
     }
     public pop(): Tocken {
         try {

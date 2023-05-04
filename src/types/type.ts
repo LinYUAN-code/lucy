@@ -46,6 +46,7 @@ export type LRStateNodeItem = {
   nonTerminal: NonTerminal;
   derivation: string[];
   matchPoint: number; // such * A ==> 0    A * b  ===> 1
+  lookAheadTocken?: string[];
 }
 export type LRStateNode = {
   id: number;

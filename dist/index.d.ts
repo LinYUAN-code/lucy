@@ -39,6 +39,7 @@ type LRStateNodeItem = {
     nonTerminal: NonTerminal;
     derivation: string[];
     matchPoint: number;
+    lookAheadTocken?: string[];
 };
 type LRStateNode = {
     id: number;
@@ -132,4 +133,20 @@ declare class LRParser {
     get stateGraph(): LRStateNodeForShow;
 }
 
-export { LL1Parser, LRParser, Lexer, checkNeedClearRightRecursion, checkNeedliftUpCommonTocken, checkNeedunionGrammers, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };
+declare class LR1Parser {
+    initialStateNode: LRStateNode | null;
+    allStateNodesMap?: Map<string, LRStateNode>;
+    lexer?: Lexer;
+    grammers?: string[];
+    firstSet?: GrammerSet;
+    constructor();
+    generateState(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): void;
+    generateStateProgressive(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): IterableIterator<undefined>;
+    predictInput(input: string, predictTable: LRPredictTable): LRPredictResultTable;
+    mergeNewNode(node: LRStateNode, addNode: LRStateNode): void;
+    generateLALRPredictTable(): LRPredictTable;
+    generateLR1PredictTable(): LRPredictTable;
+    get stateGraph(): LRStateNodeForShow;
+}
+
+export { LL1Parser, LR1Parser, LRParser, Lexer, checkNeedClearRightRecursion, checkNeedliftUpCommonTocken, checkNeedunionGrammers, clearRightRecursion, getTockFromSimpleGrammers, liftUpCommonTocken, unionGrammers };

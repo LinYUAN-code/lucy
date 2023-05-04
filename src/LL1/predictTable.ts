@@ -1,4 +1,4 @@
-import { getDerivationFirstSet } from "@/firstSet";
+import { getDerivationFirstSetWithMap } from "@/firstSet";
 import Lexer from "@/lexer";
 import { AstNode, Grammer, GrammerSet, GrammerSetLine, NonTerminal, PredictLine, PredictProcessLine, PredictTable, Process, Rule, Terminal } from "@/types/type";
 import { transferString2Grammers } from "@/utils";
@@ -37,7 +37,7 @@ export default function generatorPredictTable(
     }
     grammers.forEach(grammer => {
         for (let derivation of grammer.derivations) {
-            const derivationFirstSet = getDerivationFirstSet(lexer, derivation, nonTerminal2FirstSetMap);
+            const derivationFirstSet = getDerivationFirstSetWithMap(lexer, derivation, nonTerminal2FirstSetMap);
             const tableLine = nonTerminal2TableRowMap.get(grammer.nonTerminal);
             log.log(derivationFirstSet);
             // (1)对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = “A -> u” ；
@@ -314,7 +314,7 @@ export function* generatePredictTableProgressive(
     }
     for (let grammer of grammers) {
         for (let derivation of grammer.derivations) {
-            const derivationFirstSet = getDerivationFirstSet(lexer, derivation, nonTerminal2FirstSetMap);
+            const derivationFirstSet = getDerivationFirstSetWithMap(lexer, derivation, nonTerminal2FirstSetMap);
             const tableLine = nonTerminal2TableRowMap.get(grammer.nonTerminal);
             log.log(derivationFirstSet);
             // (1)对 First(u) 中的所有终结符 a （不含 ε ），置 M[A, a] = “A -> u” ；

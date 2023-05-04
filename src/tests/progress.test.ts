@@ -15,174 +15,174 @@ const testCases: Array<{
     followSetAnswer: GrammerSet,
     predictTable?: any,
 }> = [
-        {
-            nonTerminalSymbol: [
-                "A", "B'", "B", "C", "S"
-            ],
-            terminalsSet: [
-                [EmptyCharacter, /^ε/],
-                ["a", /^a/],
-                ["b", /^b/],
-                ["c", /^c/]
-            ],
-            grammers: [
-                "S  =>  AB",
-                "A  =>  Ca | ε",
-                "B  =>  cB'",
-                "B' =>  aACB' | ε",
-                "C  =>  b | ε"
-            ],
-            firstSetAnswer: [
-                {
-                    tocken: "C",
-                    terminals: new Set(["b", "ε"]),
-                },
-                {
-                    tocken: "B'",
-                    terminals: new Set(["a", "ε"])
-                },
-                {
-                    tocken: "B",
-                    terminals: new Set(["c"])
-                },
-                {
-                    tocken: "A",
-                    terminals: new Set(["b", "a", "ε"])
-                },
-                {
-                    tocken: "S",
-                    terminals: new Set(["b", "a", "c"])
+    {
+        nonTerminalSymbol: [
+            "A", "B'", "B", "C", "S"
+        ],
+        terminalsSet: [
+            [EmptyCharacter, /^ε/],
+            ["a", /^a/],
+            ["b", /^b/],
+            ["c", /^c/]
+        ],
+        grammers: [
+            "S  =>  AB",
+            "A  =>  Ca | ε",
+            "B  =>  cB'",
+            "B' =>  aACB' | ε",
+            "C  =>  b | ε"
+        ],
+        firstSetAnswer: [
+            {
+                tocken: "C",
+                terminals: new Set(["b", "ε"]),
+            },
+            {
+                tocken: "B'",
+                terminals: new Set(["a", "ε"])
+            },
+            {
+                tocken: "B",
+                terminals: new Set(["c"])
+            },
+            {
+                tocken: "A",
+                terminals: new Set(["b", "a", "ε"])
+            },
+            {
+                tocken: "S",
+                terminals: new Set(["b", "a", "c"])
+            }
+        ],
+        followSetAnswer: [
+            {
+                tocken: "C",
+                terminals: new Set(["a", "$"])
+            },
+            {
+                tocken: "B'",
+                terminals: new Set(["$"])
+            },
+            {
+                tocken: "B",
+                terminals: new Set(["$"])
+            },
+            {
+                tocken: "A",
+                terminals: new Set(["b", "a", "c", "$"])
+            },
+            {
+                tocken: "S",
+                terminals: new Set(["$"])
+            }
+        ]
+    },
+    {
+        nonTerminalSymbol: [
+            "E'", "E", "T'", "T", "F"
+        ],
+        terminalsSet: [
+            [EmptyCharacter, /^ε/],
+            ["int", /^(0|[1-9][0-9]*)/],
+            ["+", /^\+/],
+            ["*", /^\*/],
+            ["(", /^\(/],
+            [")", /^\)/],
+        ],
+        grammers: [
+            "E  =>  T E'",
+            "E' =>  + T E' | ε",
+            "T  =>  F T'",
+            "T' =>  * F T' | ε",
+            "F  => ( E ) | int"
+        ],
+        firstSetAnswer: [
+            {
+                tocken: "E",
+                terminals: new Set(["(", "int"]),
+            },
+            {
+                tocken: "T",
+                terminals: new Set(["(", "int"])
+            },
+            {
+                tocken: "F",
+                terminals: new Set(["(", "int"])
+            },
+            {
+                tocken: "T'",
+                terminals: new Set(["*", EmptyCharacter])
+            },
+            {
+                tocken: "E'",
+                terminals: new Set(["+", EmptyCharacter])
+            }
+        ],
+        followSetAnswer: [
+            {
+                tocken: "E",
+                terminals: new Set([")", "$"])
+            },
+            {
+                tocken: "E'",
+                terminals: new Set([")", "$"])
+            },
+            {
+                tocken: "T",
+                terminals: new Set(["+", "$", ")"])
+            },
+            {
+                tocken: "T'",
+                terminals: new Set(["+", "$", ")"])
+            },
+            {
+                tocken: "F",
+                terminals: new Set(["*", "+", "$", ")"])
+            }
+        ],
+        predictTable: [
+            {
+                "nonTerminal": "E'",
+                "terminal2Derivation": {
+                    "+": { "nonTerminal": "E'", "derivations": [["+", "T", "E'"]] },
+                    "$": { "nonTerminal": "E'", "derivations": [["ε"]] },
+                    ")": { "nonTerminal": "E'", "derivations": [["ε"]] }
                 }
-            ],
-            followSetAnswer: [
-                {
-                    tocken: "C",
-                    terminals: new Set(["a", "$"])
-                },
-                {
-                    tocken: "B'",
-                    terminals: new Set(["$"])
-                },
-                {
-                    tocken: "B",
-                    terminals: new Set(["$"])
-                },
-                {
-                    tocken: "A",
-                    terminals: new Set(["b", "a", "c", "$"])
-                },
-                {
-                    tocken: "S",
-                    terminals: new Set(["$"])
+            },
+            {
+                "nonTerminal": "E",
+                "terminal2Derivation": {
+                    "(": { "nonTerminal": "E", "derivations": [["T", "E'"]] },
+                    "int": { "nonTerminal": "E", "derivations": [["T", "E'"]] }
                 }
-            ]
-        },
-        {
-            nonTerminalSymbol: [
-                "E'", "E", "T'", "T", "F"
-            ],
-            terminalsSet: [
-                [EmptyCharacter, /^ε/],
-                ["int", /^(0|[1-9][0-9]*)/],
-                ["+", /^\+/],
-                ["*", /^\*/],
-                ["(", /^\(/],
-                [")", /^\)/],
-            ],
-            grammers: [
-                "E  =>  T E'",
-                "E' =>  + T E' | ε",
-                "T  =>  F T'",
-                "T' =>  * F T' | ε",
-                "F  => ( E ) | int"
-            ],
-            firstSetAnswer: [
-                {
-                    tocken: "E",
-                    terminals: new Set(["(", "int"]),
-                },
-                {
-                    tocken: "T",
-                    terminals: new Set(["(", "int"])
-                },
-                {
-                    tocken: "F",
-                    terminals: new Set(["(", "int"])
-                },
-                {
-                    tocken: "T'",
-                    terminals: new Set(["*", EmptyCharacter])
-                },
-                {
-                    tocken: "E'",
-                    terminals: new Set(["+", EmptyCharacter])
+            },
+            {
+                "nonTerminal": "T'",
+                "terminal2Derivation": {
+                    "*": { "nonTerminal": "T'", "derivations": [["*", "F", "T'"]] },
+                    "$": { "nonTerminal": "T'", "derivations": [["ε"]] },
+                    ")": { "nonTerminal": "T'", "derivations": [["ε"]] },
+                    "+": { "nonTerminal": "T'", "derivations": [["ε"]] }
                 }
-            ],
-            followSetAnswer: [
-                {
-                    tocken: "E",
-                    terminals: new Set([")", "$"])
-                },
-                {
-                    tocken: "E'",
-                    terminals: new Set([")", "$"])
-                },
-                {
-                    tocken: "T",
-                    terminals: new Set(["+", "$", ")"])
-                },
-                {
-                    tocken: "T'",
-                    terminals: new Set(["+", "$", ")"])
-                },
-                {
-                    tocken: "F",
-                    terminals: new Set(["*", "+", "$", ")"])
+            },
+            {
+                "nonTerminal": "T",
+                "terminal2Derivation": {
+                    "(": { "nonTerminal": "T", "derivations": [["F", "T'"]] },
+                    "int": { "nonTerminal": "T", "derivations": [["F", "T'"]] }
                 }
-            ],
-            predictTable: [
-                {
-                    "nonTerminal": "E'",
-                    "terminal2Derivation": {
-                        "+": { "nonTerminal": "E'", "derivations": [["+", "T", "E'"]] },
-                        "$": { "nonTerminal": "E'", "derivations": [["ε"]] },
-                        ")": { "nonTerminal": "E'", "derivations": [["ε"]] }
-                    }
-                },
-                {
-                    "nonTerminal": "E",
-                    "terminal2Derivation": {
-                        "(": { "nonTerminal": "E", "derivations": [["T", "E'"]] },
-                        "int": { "nonTerminal": "E", "derivations": [["T", "E'"]] }
-                    }
-                },
-                {
-                    "nonTerminal": "T'",
-                    "terminal2Derivation": {
-                        "*": { "nonTerminal": "T'", "derivations": [["*", "F", "T'"]] },
-                        "$": { "nonTerminal": "T'", "derivations": [["ε"]] },
-                        ")": { "nonTerminal": "T'", "derivations": [["ε"]] },
-                        "+": { "nonTerminal": "T'", "derivations": [["ε"]] }
-                    }
-                },
-                {
-                    "nonTerminal": "T",
-                    "terminal2Derivation": {
-                        "(": { "nonTerminal": "T", "derivations": [["F", "T'"]] },
-                        "int": { "nonTerminal": "T", "derivations": [["F", "T'"]] }
-                    }
-                },
-                {
-                    "nonTerminal": "F",
-                    "terminal2Derivation": {
-                        "(": { "nonTerminal": "F", "derivations": [["(", "E", ")"]] },
-                        "int": { "nonTerminal": "F", "derivations": [["int"]] }
-                    }
+            },
+            {
+                "nonTerminal": "F",
+                "terminal2Derivation": {
+                    "(": { "nonTerminal": "F", "derivations": [["(", "E", ")"]] },
+                    "int": { "nonTerminal": "F", "derivations": [["int"]] }
                 }
-            ]
+            }
+        ]
 
-        }
-    ]
+    }
+]
 
 
 test("first set test", () => {

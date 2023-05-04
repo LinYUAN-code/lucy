@@ -108,10 +108,41 @@ export default function generateFirstSet(lexer: Lexer, inGrammers: Array<string>
     });
 }
 
+export function getDerivationFirstSet(lexer: Lexer, derivation: string[], firstSet: GrammerSet): GrammerSetLine {
+    const firstSetMap: Map<NonTerminal, GrammerSetLine> = new Map();
+    firstSet.forEach(setLine => {
+        firstSetMap.set(setLine.tocken,setLine);
+    })
+    const terminals = new Set<Terminal>();
+    for (let i = 0; i < derivation.length; i++) {
+        const tocken = derivation[i];
+        if (lexer.isTerminal(tocken)) {
+            if (tocken !== EmptyCharacter) {
+                terminals.add(tocken);
+                break;
+            }
+        } else {
+            firstSetMap.get(tocken)?.terminals.forEach(terminal => {
+                terminals.add(terminal);
+            })
+            if (!firstSetMap.get(tocken)!.terminals.has(EmptyCharacter)) {
+                break;
+            }
+        }
+        if (i === derivation.length - 1) {
+            terminals.add(EmptyCharacter);
+        }
+    }
+    return {
+        tocken: derivation.join(""),
+        terminals,
+    } 
+}
 
 
 
-export function getDerivationFirstSet(lexer: Lexer, derivation: string[], firstSetMap: Map<NonTerminal, GrammerSetLine>): GrammerSetLine {
+
+export function getDerivationFirstSetWithMap(lexer: Lexer, derivation: string[], firstSetMap: Map<NonTerminal, GrammerSetLine>): GrammerSetLine {
     const terminals = new Set<Terminal>();
     for (let i = 0; i < derivation.length; i++) {
         const tocken = derivation[i];
@@ -142,8 +173,7 @@ export function* generateFirstSetProgressive(lexer: Lexer, inGrammers: Array<str
     yield [
         "1. 如果X式一个终结符号，那么FIRST(X) = X ",
         "2. 如果 X => ε 是一个产生式，那么将e加人到 FIRST（X)中。",
-        `3. A => B0B1B2B3
-            i = 0
+        `3. A => B0B1B2B3，i = 0，循环i
             FIRST(Bi) - EmptyCharacter 加入到 FIRST(A)中
             如果FIRST(B1)不含有EmptyCharacter退出循环
             若B0 - B3均含有EmptyCharacter 将EmptyCharacter加入到FIRST(A)中

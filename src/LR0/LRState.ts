@@ -346,6 +346,9 @@ export class LRParser  {
                     for(let terminal of this.lexer.terminals) {
                         predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
                     }
+                    if(!predictLine.action.get(EndingCharacter)?.length) {
+                        predictLine.action.get(EndingCharacter)!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                    }
                 }
             }
             predictTable.push(predictLine);
@@ -502,6 +505,9 @@ function stateItemToString(item: LRStateNodeItem): string {
             ans += `${item.derivation[i]}`;
         }else {
             ans += `${item.derivation[i]} `;
+        }
+        if(i === (item.derivation.length-1) && item.matchPoint === item.derivation.length) {
+            ans += "·"
         }
     }
     return ans;

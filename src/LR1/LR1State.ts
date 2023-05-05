@@ -540,6 +540,9 @@ function stateItemToString(item: LRStateNodeItem,needLookAhead: boolean = true):
         }else {
             ans += `${item.derivation[i]} `;
         }
+        if(i === (item.derivation.length-1) && item.matchPoint === item.derivation.length) {
+            ans += "·"
+        }
     }
     if(item.lookAheadTocken?.length && needLookAhead) {
         ans += " , " + item.lookAheadTocken.join("/");

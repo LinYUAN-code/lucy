@@ -87,8 +87,8 @@ export type LRPredictResultTable = Array<LRPredictLine>;
 
 
 export type AstNode = {
-  id: any;
-  text: string;
-  children?: AstNode[];
-  check?: boolean;
+  id: any; // 节点唯一id 辅助前端展示使用
+  text: string; // 节点文本
+  children?: AstNode[]; // 子节点
+  check?: boolean; // 辅助前端展示使用
 }

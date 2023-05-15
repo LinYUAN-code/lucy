@@ -495,7 +495,7 @@ function stateItemsToString(items: LRStateNodeItem[]): string {
     return ans;
 }
 function stateItemToString(item: LRStateNodeItem): string { 
-    let ans = `${item.nonTerminal} => `;
+    let ans = `${item.nonTerminal} -> `;
     for(let i=0;i<item.derivation.length;i++) {
         if(i===item.matchPoint) {
             if(!i)ans += " ";

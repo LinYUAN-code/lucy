@@ -141,7 +141,6 @@ declare class LR1Parser {
     firstSet?: GrammerSet;
     constructor();
     generateState(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): void;
-    generateStateProgressive(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): IterableIterator<undefined>;
     predictInput(input: string, predictTable: LRPredictTable): LRPredictResultTable;
     mergeNewNode(node: LRStateNode, addNode: LRStateNode): void;
     generateLALRPredictTable(): LRPredictTable;

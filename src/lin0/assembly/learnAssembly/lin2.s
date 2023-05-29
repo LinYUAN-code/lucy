@@ -8,8 +8,8 @@ _helloWorld:
     pushq    %rbp
     movq    %rsp, %rbp
     subq    $32, %rsp
-    movq    %rdi, a(%rip)
-    movq    %rsi, b(%rip)
+    movq    %rdi, -8(%rbp)
+    movq    %rsi, -16(%rbp)
     movq    $1, -24(%rbp)
     movq    c(%rip), %r9
     movq    %r9, -32(%rbp)
@@ -22,9 +22,9 @@ _helloWorld:
     leaq    L.str.0(%rip), %rdi
     xorb    %al, %al
     callq    _printf
-    movq    b(%rip), %r9
+    movq    -16(%rbp), %r9
     movq    %r9, -24(%rbp)
-    movq    a(%rip), %r9
+    movq    -8(%rbp), %r9
     movq    %r9, -32(%rbp)
     movq    -32(%rbp), %r10
     movq    -24(%rbp), %r11

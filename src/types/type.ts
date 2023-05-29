@@ -48,7 +48,10 @@ export type LRStateNodeItem = {
   matchPoint: number; // such * A ==> 0    A * b  ===> 1
   lookAheadTocken?: string[];
 }
-export type LRStateNode = {
+/**
+ * 包含四个属性，id表示状态机的id，item表示状态机中的项目，还有edge类似指针，第四个属性是可选的
+ */
+export type  LRStateNode = {
   id: number;
   items: LRStateNodeItem[];
   edges: {
@@ -83,8 +86,24 @@ export type LRPredictLine = {
   input: string[];
   move?: string;
 }
+
 export type LRPredictResultTable = Array<LRPredictLine>;
 
+export type LRPredictLineWithAST={                  ///////////////
+  stack:number[];
+  symbols:LRASTNode[];
+  input:string[];
+  move?:string;
+}
+
+export type LRPredictResultTableWithASTNode=Array<LRPredictLineWithAST>  //////////////
+export type LRASTNode={
+  id: any;
+  text:string;
+  // parent?:LRASTNode;
+  check?:boolean;
+  children?: LRASTNode[];
+}
 
 export type AstNode = {
   id: any; // 节点唯一id 辅助前端展示使用

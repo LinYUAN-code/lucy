@@ -3,6 +3,8 @@ import { safeRegCharacter } from "./utils";
 import { EmptyCharacter, EndingCharacter } from "./utils/const";
 import log from "./utils/log";
 
+
+//词法分析器不仅仅向语法分析器返回一个词法单元名字，还会返回一个描述该词法单元的词素的属性值
 export default class Lexer {
     public nonTerminals: Array<string>;
     public terminals: Array<[string, RegExp]>;
@@ -18,6 +20,9 @@ export default class Lexer {
         this.source = source;
         this.currentLine = 0;
         this.currentColumn = 0;
+    }
+    public getSource(){
+        console.log(this.source)
     }
     public remainString(): string {
         return this.source.slice(this.currentColumn);

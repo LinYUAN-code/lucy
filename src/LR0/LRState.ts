@@ -618,14 +618,21 @@ export class LRParser  {
             vis[node.id] = newNode;
             newNode.id = node.id;
             let reduceNum = 0;
+            let shiftNum=0;
             node.items?.forEach((item: LRStateNodeItem)=>{
                 if(item.matchPoint === item.derivation.length) {
                     reduceNum++;
                 }
+                if(this.lexer?.isTerminal(item.derivation[item.matchPoint])  ){
+                    shiftNum++;
+                } 
             })
             if(reduceNum>=2) {
                 newNode.isCollision = true;
             } else {
+                if(reduceNum>=1 && shiftNum>0){
+                     newNode.isCollision = true;
+                }
                 newNode.isCollision = false;
             }
             newNode.items = node.items.map((item: any)=>{

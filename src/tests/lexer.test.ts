@@ -13,9 +13,11 @@ test("first set test", () => {
         [")", /^\)/],
     ], []);
     lexer.setSource("12 + 32 * 67".replaceAll(/\s/g, ""));
+    console.log(lexer.remainString())
     try {
         while (true) {
             const tocken = lexer.pop();
+            console.log(tocken.tocken+" "+tocken.origin)
             if (tocken.tocken === EndingCharacter) break;
         }
     } catch (e) {

@@ -12,6 +12,7 @@ import log from "./utils/log";
 */
 const simpleNonTerminalReg = /^[A-Z]'*/;
 const simpleTerminalReg = /[a-z|\u0391-\u03C9]/;
+const otherTerminal=['(',')','+','*','-'];
 export function getTockFromSimpleGrammers(inGrammers: Array<string>): {
     nonTerminals: Array<string>,
     terminals: Array<[string, RegExp]>,
@@ -26,6 +27,7 @@ export function getTockFromSimpleGrammers(inGrammers: Array<string>): {
             while (derivation.length) {
                 let matchResult = null;
                 matchResult = derivation.match(simpleNonTerminalReg);
+                // 切割ABC这种非终结符
                 if (matchResult) {
                     nonTerminals.add(matchResult[0]);
                     derivation = derivation.slice(matchResult[0].length);

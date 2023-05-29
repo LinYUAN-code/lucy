@@ -2,7 +2,7 @@ import generateFirstSet from "@/firstSet";
 import generateFllowSet from "@/followSet";
 import Lexer from "@/lexer";
 import { getTockFromSimpleGrammers } from "@/simpleGrammerHelper";
-import { Grammers, LRPredictLine, LRPredictResultTable, LRPredictTableLine, LRPredictTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem, PredictTable, Process, Rule } from "@/types/type";
+import { Grammers, LRPredictLine, LRPredictResultTable, LRPredictTableLine, LRPredictTable, LRStateNode, LRStateNodeForShow, LRStateNodeItem, PredictTable, Process, Rule, LRPredictLineWithAST, LRASTNode, LRPredictResultTableWithASTNode } from "@/types/type";
 import { EmptyCharacter, EndingCharacter } from "@/utils/const";
 import log from "@/utils/log";
 
@@ -16,6 +16,7 @@ export class LRParser  {
     }
     generateState(grammers: string[], parseStartNonTerminal: string,nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>) {
         if (!nonTerminals || !terminals) {
+            // 如果用户没有自定义终结符和非终结符，那么默认它的语法是满足课本里的
             const tockenAnaRes = getTockFromSimpleGrammers(grammers);
             nonTerminals = tockenAnaRes.nonTerminals;
             terminals = tockenAnaRes.terminals;
@@ -25,14 +26,15 @@ export class LRParser  {
         log.log("[terminals]", terminals);
         this.grammers = grammers;
         this.lexer = new Lexer(terminals, nonTerminals);
-
+        // 定义从非终结符对应右部式子的结构
         const nonTerminals2DerivationMap = new Map<string,string[][]>();
         for (let grammer of grammers) {
             grammer = grammer.replaceAll(/\s/g, "");
-            const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);
+            const arr = grammer.split(/(=>)|(->)/).filter(v => v !== "=>" && v !== "->" && v);//['S','AB']
             const nonTerminal = arr[0];
             const derivations = arr[1].split("|").filter(v => v).map(derivation => {
-                return this.lexer!.splitDerivation(derivation);
+                return this.lexer!.splitDerivation(derivation);   // 将产生式的体拆开，终结符和非终结符成为个体
+                //return this.lexer?.splitDerivation(derivation)
             });
             nonTerminals2DerivationMap.set(nonTerminal, derivations);
         }
@@ -42,7 +44,7 @@ export class LRParser  {
             id: 0,
             items: [{
                 nonTerminal: AugumentStart,
-                derivation: [parseStartNonTerminal],
+                derivation: [parseStartNonTerminal], // S
                 matchPoint: 0,
             }],
             edges: [],
@@ -54,14 +56,14 @@ export class LRParser  {
         const vis: boolean[] = [];
         let preSize = 0;
         while(true) {
-            if(allStateNodesMap.size == preSize)break;
+            if(allStateNodesMap.size == preSize)break; // 目前图中的node都处理完了
             preSize = allStateNodesMap.size;
             for(let state of allStateNodesMap.values()) {
-                if(vis[state.id]) continue;
+                if(vis[state.id]) continue; // 如果该状态已经遍历过，就略过
                 vis[state.id] = true;
                 // 判断是否可以到接受状态
-                for(let item of state.items) {
-                    if(item.nonTerminal === AugumentStart && item.matchPoint === 1) {
+                for(let item of state.items) {  // 访问这个状态中的项目
+                    if(item.nonTerminal === AugumentStart && item.matchPoint === 1) { // 判断是否是接受状态
                         state.edges.push({
                             tocken: EndingCharacter,
                             next: {
@@ -75,17 +77,17 @@ export class LRParser  {
                 for(let nonTerminal of nonTerminals) {
                     let matchItems: LRStateNodeItem[] = [];
                     for(let item of state.items) {
-                        if(item.derivation.length === item.matchPoint)continue;
-                        if(item.derivation[item.matchPoint] === nonTerminal) {
-                            matchItems.push({
+                        if(item.derivation.length === item.matchPoint)continue;//说明这个item已经结束了
+                        if(item.derivation[item.matchPoint] === nonTerminal) { //*后面是这个nonTerminal
+                            matchItems.push({ // 创建一个新的节点，是通过获取这个nonTerminal获得的   看到这里了
                                 nonTerminal: item.nonTerminal,
                                 derivation: item.derivation,
                                 matchPoint: item.matchPoint+1,
                             })
                         } 
                     }
-                    if(!matchItems.length)continue;
-                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer);
+                    if(!matchItems.length)continue; 
+                    expandStateItems(matchItems,nonTerminals2DerivationMap,this.lexer); //获取这个state其他item
                     const key = stateItemsToString(matchItems);
                     if(!allStateNodesMap.has(key)) {
                         allStateNodesMap.set(key,{
@@ -162,6 +164,7 @@ export class LRParser  {
             }],
             edges: [],
         }
+    
         expandStateItems(this.initialStateNode.items,nonTerminals2DerivationMap,this.lexer);
         yield;
         const allStateNodesMap = new Map<string,LRStateNode>();
@@ -262,7 +265,7 @@ export class LRParser  {
         while(true) {
             const step = ans[ans.length-1];
             const next = JSON.parse(JSON.stringify(step)) as LRPredictLine;
-            const stateId = step.stack[step.stack.length - 1];
+            const stateId = step.stack[step.stack.length - 1]; //获取状态id
 
             const predictLine = predictTable[stateId];
             let emptyCharacterFlag = false;
@@ -312,6 +315,154 @@ export class LRParser  {
         }
         return ans;
     }
+
+    predictInputWithAST(input: string,predictTable: LRPredictTable): LRPredictResultTableWithASTNode {
+        if(!this.lexer) {
+            throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+        }
+        let ans: LRPredictResultTableWithASTNode = [];
+        input = input.replaceAll(/\s/g, "");
+        const lid=1;
+        ans.push({
+            stack: [0],
+            symbols: [],
+            input: [...this.lexer.splitDerivation(input),EndingCharacter],
+        })
+        while(true) {
+            const step = ans[ans.length-1];
+            const next = JSON.parse(JSON.stringify(step)) as LRPredictLineWithAST;  //
+            const stateId = step.stack[step.stack.length - 1];
+
+            const predictLine = predictTable[stateId];
+            const move = predictLine.action.get(step.input[0])!;
+            if(move.length > 1) {
+                throw new Error(`move collision ${move}`);
+            }
+            if(!move.length) {
+                throw new Error(`move is empty ${move}`);
+            }
+            let cMove = move[0] as string;
+            if(cMove === "acc") {
+                step.move = "接受";
+                break;
+            }
+            if(cMove.startsWith("S")) {
+                // shift
+                step.move = `移入${step.input[0]}`;
+                //next.symbols.push(next.input.shift()!); // shuft把input的第一个元素删除并返回
+                const lrnode:LRASTNode={id:lid,text:next.input.shift()!}
+                next.symbols.push(lrnode);
+                next.stack.push(Number(cMove.slice(1)));
+            } else {
+                // reduce
+                step.move = `根据${cMove}归约`;
+                const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
+                const nonTerminal = grammer.split("=>")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
+               const parentNode:LRASTNode={id:lid+1,text:nonTerminal};
+                if(!parentNode.children){
+                        parentNode.children=[];
+                }
+                for(let i=0;i<derivation.length;i++) {
+                    next.stack.pop();
+                    // console.log(next.symbols)
+                    const temp= next.symbols.pop()!;
+                    // temp!.parent=parentNode ///
+                    //console.log("123",parentNode.children);
+        
+                    parentNode.children!.push(temp);
+                    //const lrnode=next.symbols.pop() as LRASTNode;
+                    //console.log("kanzheli1111111",lrnode);
+                   // lrnode!.addParent(parentNode)
+                }
+                next.symbols.push(parentNode);
+                // goto
+                const leftStateId = step.stack[next.stack.length - 1];
+                const jPredictLine = predictTable[leftStateId];
+                next.stack.push(jPredictLine.goto.get(nonTerminal)![0] as unknown as number);
+            }
+            ans.push(next);
+        }
+
+        // (ans as any).astNode = 
+        return ans;
+    }
+
+
+    *predictInputProgressive(input: string,predictTable: LRPredictTable): IterableIterator<LRPredictResultTableWithASTNode> {
+        if(!this.lexer) {
+            throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
+        }
+        let ans: LRPredictResultTableWithASTNode = [];
+        input = input.replaceAll(/\s/g, "");
+        const lid=100;
+        ans.push({
+            stack: [0],
+            symbols: [],
+            input: [...this.lexer.splitDerivation(input),EndingCharacter],
+        })
+        yield ans;
+        while(true) {
+            const step = ans[ans.length-1];
+            const next = JSON.parse(JSON.stringify(step)) as LRPredictLineWithAST;  //
+            const stateId = step.stack[step.stack.length - 1];
+
+            const predictLine = predictTable[stateId];
+            const move = predictLine.action.get(step.input[0])!;
+            if(move.length > 1) {
+                throw new Error(`move collision ${move}`);
+            }
+            if(!move.length) {
+                throw new Error(`move is empty ${move}`);
+            }
+            let cMove = move[0] as string;
+            if(cMove === "acc") {
+                step.move = "接受";
+                break;
+            }
+            if(cMove.startsWith("S")) {
+                // shift
+                step.move = `移入${step.input[0]}`;
+                //next.symbols.push(next.input.shift()!); // shuft把input的第一个元素删除并返回
+                const lrnode:LRASTNode={id:lid,text:next.input.shift()!}
+                next.symbols.push(lrnode);
+                next.stack.push(Number(cMove.slice(1)));
+            } else {
+                // reduce
+                step.move = `根据${cMove}归约`;
+                const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
+                const nonTerminal = grammer.split("=>")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
+               const parentNode:LRASTNode={id:lid-1,text:nonTerminal};
+                if(!parentNode.children){
+                        parentNode.children=[];
+                }
+                for(let i=0;i<derivation.length;i++) {
+                    next.stack.pop();
+                    // console.log(next.symbols)
+                    const temp= next.symbols.pop()!;
+                    // temp!.parent=parentNode ///
+                    //console.log("123",parentNode.children);
+        
+                    parentNode.children!.push(temp);
+                    //const lrnode=next.symbols.pop() as LRASTNode;
+                    //console.log("kanzheli1111111",lrnode);
+                   // lrnode!.addParent(parentNode)
+                }
+                next.symbols.push(parentNode);
+                // goto
+                const leftStateId = step.stack[next.stack.length - 1];
+                const jPredictLine = predictTable[leftStateId];
+                next.stack.push(jPredictLine.goto.get(nonTerminal)![0] as unknown as number);
+            }
+            yield ans;
+            ans.push(next);
+        }
+        
+        // (ans as any).astNode = 
+        return ans;
+    }
+
     generateLR0PredictTable() {
         if(!this.initialStateNode || !this.allStateNodesMap || !this.lexer) {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
@@ -410,6 +561,7 @@ export class LRParser  {
             throw new Error("[generatePredictTable] must call generateState before generatePredictTable");
         }
         const followSet = generateFllowSet(this.lexer,this.grammers);
+        console.log(followSet)
         const predictTable: LRPredictTable = [];
         for(let stateNode of this.allStateNodesMap.values()) {
             let predictLine: LRPredictTableLine = {
@@ -513,17 +665,19 @@ function stateItemToString(item: LRStateNodeItem): string {
     return ans;
 }
 
+// 
 function expandStateItems(items: LRStateNodeItem[],nonTerminals2DerivationMap: Map<string,string[][]>,lexer: Lexer) {
-    for(let i=0;i<items.length;i++) {
+    for(let i=0;i<items.length;i++) { // 对项集中的每一个项遍历
         const item = items[i];
-        const tocken = item.derivation[item.matchPoint];
-        if(lexer.isTerminal(tocken))continue;
-        const derivations = nonTerminals2DerivationMap.get(tocken);
+        const tocken = item.derivation[item.matchPoint];//取 * 之后的字符,比如S'->*S，取S
+        if(lexer.isTerminal(tocken))continue; // 如果是终结符就跳过
+        const derivations = nonTerminals2DerivationMap.get(tocken);  // 取出非终结符的推导式,比如S->AB，取A，B
+                                                                    // 这里的derivations就是接下来语法分析将会见到的字符，可能是非终结符，可能是终结符
         derivations?.forEach(derivation=>{
             let inFlag = false;
-            for(let jItem of items) {
-                if(jItem.nonTerminal === tocken && jItem.matchPoint === 0) {
-                    if(jItem.derivation.length !== derivation.length)continue;
+            for(let jItem of items) {//遍历项集有没有这个项,如果有后面就不要加入
+                if(jItem.nonTerminal === tocken && jItem.matchPoint === 0) { //如果项集里目前存在这个token的项，且占位点也是0的化，还不能确定一定是这个项
+                    if(jItem.derivation.length !== derivation.length)continue; // 如果他们推导出来的体不一样长就不是一个体
                     let equal = true;
                     for(let i=0;i<derivation.length;i++) {
                         if(jItem.derivation[i] !== derivation[i]) {

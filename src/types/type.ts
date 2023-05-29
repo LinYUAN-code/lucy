@@ -12,8 +12,8 @@ export type Tocken = {
 export type NonTerminal = string;
 export type Terminal = string;
 export type Grammer = {
-  nonTerminal: NonTerminal,  // 文法左侧的非终结符号
-  derivations: Array<Array<NonTerminal | Terminal>> // 文法右侧的产生式分割成数组
+  nonTerminal: NonTerminal; // 文法左侧的非终结符号
+  derivations: Array<Array<NonTerminal | Terminal>>; // 文法右侧的产生式分割成数组
 };
 export type Grammers = Array<Grammer>;
 export type GrammerSetLine = {
@@ -25,38 +25,40 @@ export type GrammerSet = Array<GrammerSetLine>;
 
 export type PredictLine = {
   nonTerminal: string; // 该行所对应的非终结符
-  terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;// 该终结符遇到下一个字符对应的文法动作
+  terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>; // 该终结符遇到下一个字符对应的文法动作
 };
 export type PredictTable = Array<PredictLine>;
 
 export type PredictProcessLine = {
-  parseStack: Array<Terminal | NonTerminal>,
-  remainingInput: string,
-  parseAction: string,
-}
-
+  parseStack: Array<Terminal | NonTerminal>;
+  remainingInput: string;
+  parseAction: string;
+};
 
 export type Rule = Array<string>;
 export type Process<T> = {
   ruleIndex: number;
   result: T;
-}
+};
 
 export type LRStateNodeItem = {
   nonTerminal: NonTerminal; // 非终结符
   derivation: string[]; // 产生式
   matchPoint: number; // 匹配点的位置 示例: · A ==> 0    A · b  ===> 1
   lookAheadTocken?: string[]; // 向前看符号
-}
+};
+/**
+ * 包含四个属性，id表示状态机的id，item表示状态机中的项目，还有edge类似指针，第四个属性是可选的
+ */
 export type LRStateNode = {
-  id: number; // 状态节点id
-  items: LRStateNodeItem[]; // 项集
-  edges: {  // GOTO边
+  id: number;
+  items: LRStateNodeItem[];
+  edges: {
     tocken: NonTerminal | Terminal;
     next: LRStateNode;
   }[];
   acc?: boolean; //表示是否是接受状态
-}
+};
 
 export type LRStateNodeForShow = {
   id: number;
@@ -66,29 +68,44 @@ export type LRStateNodeForShow = {
     next: LRStateNodeForShow;
   }[];
   acc?: boolean; //表示是否是接受状态
-}
-
+};
 
 export type LRPredictTableLine = {
   id: number;
   action: Map<Terminal, (number | string[] | string)[]>;
-  goto: Map<NonTerminal,(number | string[] | string)[]>;
+  goto: Map<NonTerminal, (number | string[] | string)[]>;
 };
-export type LRPredictTable = Array<LRPredictTableLine>
-
+export type LRPredictTable = Array<LRPredictTableLine>;
 
 export type LRPredictLine = {
   stack: number[];
   symbols: string[];
   input: string[];
   move?: string;
-}
+};
+
 export type LRPredictResultTable = Array<LRPredictLine>;
 
+export type LRPredictLineWithAST = {
+  ///////////////
+  stack: number[];
+  symbols: LRASTNode[];
+  input: string[];
+  move?: string;
+};
+
+export type LRPredictResultTableWithASTNode = Array<LRPredictLineWithAST>; //////////////
+export type LRASTNode = {
+  id: any;
+  text: string;
+  // parent?:LRASTNode;
+  check?: boolean;
+  children?: LRASTNode[];
+};
 
 export type AstNode = {
   id: any; // 节点唯一id 辅助前端展示使用
   text: string; // 节点文本
   children?: AstNode[]; // 子节点
   check?: boolean; // 辅助前端展示使用
-}
+};

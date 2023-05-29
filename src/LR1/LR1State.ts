@@ -376,6 +376,17 @@ export class LR1Parser  {
             const newNode: any = {};
             vis[node.id] = newNode;
             newNode.id = node.id;
+            let reduceNum = 0;
+            node.items?.forEach((item: LRStateNodeItem)=>{
+                if(item.matchPoint === item.derivation.length) {
+                    reduceNum++;
+                }
+            })
+            if(reduceNum>=2) {
+                newNode.isCollision = true;
+            } else {
+                newNode.isCollision = false;
+            }
             newNode.items = node.items.map((item: any)=>{
                 return stateItemToString(item);
             })

@@ -67,6 +67,7 @@ export type LRStateNodeForShow = {
     tocken: NonTerminal | Terminal;
     next: LRStateNodeForShow;
   }[];
+  isCollision: boolean;
   acc?: boolean; //表示是否是接受状态
 };
 

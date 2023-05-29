@@ -358,10 +358,10 @@ export class LRParser  {
                 step.move = `根据${cMove}归约`;
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
                 const nonTerminal = grammer.split("->")[0];
-                const derivation = this.lexer.splitDerivation(grammer.split("->")[1]); // 这有问题
-               const parentNode:LRASTNode={id:lid+1,text:nonTerminal};
+                const derivation = this.lexer.splitDerivation(grammer.split("->")[1]);
+                const parentNode:LRASTNode={id:lid+1,text:nonTerminal};
                 if(!parentNode.children){
-                        parentNode.children=[];
+                    parentNode.children=[];
                 }
                 for(let i=0;i<derivation.length;i++) {
                     next.stack.pop();
@@ -373,7 +373,7 @@ export class LRParser  {
                     parentNode.children!.push(temp);
                     //const lrnode=next.symbols.pop() as LRASTNode;
                     //console.log("kanzheli1111111",lrnode);
-                   // lrnode!.addParent(parentNode)
+                    // lrnode!.addParent(parentNode)
                 }
                 next.symbols.push(parentNode);
                 // goto
@@ -431,11 +431,11 @@ export class LRParser  {
                 // reduce
                 step.move = `根据${cMove}归约`;
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
-                const nonTerminal = grammer.split("=>")[0];
-                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
-               const parentNode:LRASTNode={id:lid-1,text:nonTerminal};
+                const nonTerminal = grammer.split("->")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("->")[1]);
+                const parentNode:LRASTNode={id:lid-1,text:nonTerminal};
                 if(!parentNode.children){
-                        parentNode.children=[];
+                    parentNode.children=[];
                 }
                 for(let i=0;i<derivation.length;i++) {
                     next.stack.pop();
@@ -447,7 +447,7 @@ export class LRParser  {
                     parentNode.children!.push(temp);
                     //const lrnode=next.symbols.pop() as LRASTNode;
                     //console.log("kanzheli1111111",lrnode);
-                   // lrnode!.addParent(parentNode)
+                    // lrnode!.addParent(parentNode)
                 }
                 next.symbols.push(parentNode);
                 // goto
@@ -617,6 +617,17 @@ export class LRParser  {
             const newNode: any = {};
             vis[node.id] = newNode;
             newNode.id = node.id;
+            let reduceNum = 0;
+            node.items?.forEach((item: LRStateNodeItem)=>{
+                if(item.matchPoint === item.derivation.length) {
+                    reduceNum++;
+                }
+            })
+            if(reduceNum>=2) {
+                newNode.isCollision = true;
+            } else {
+                newNode.isCollision = false;
+            }
             newNode.items = node.items.map((item: any)=>{
                 return stateItemToString(item);
             })
@@ -672,7 +683,7 @@ function expandStateItems(items: LRStateNodeItem[],nonTerminals2DerivationMap: M
         const tocken = item.derivation[item.matchPoint];//取 * 之后的字符,比如S'->*S，取S
         if(lexer.isTerminal(tocken))continue; // 如果是终结符就跳过
         const derivations = nonTerminals2DerivationMap.get(tocken);  // 取出非终结符的推导式,比如S->AB，取A，B
-                                                                    // 这里的derivations就是接下来语法分析将会见到的字符，可能是非终结符，可能是终结符
+        // 这里的derivations就是接下来语法分析将会见到的字符，可能是非终结符，可能是终结符
         derivations?.forEach(derivation=>{
             let inFlag = false;
             for(let jItem of items) {//遍历项集有没有这个项,如果有后面就不要加入

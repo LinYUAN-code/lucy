@@ -41,6 +41,9 @@ type LRStateNodeItem = {
     matchPoint: number;
     lookAheadTocken?: string[];
 };
+/**
+ * 包含四个属性，id表示状态机的id，item表示状态机中的项目，还有edge类似指针，第四个属性是可选的
+ */
 type LRStateNode = {
     id: number;
     items: LRStateNodeItem[];
@@ -57,6 +60,7 @@ type LRStateNodeForShow = {
         tocken: NonTerminal | Terminal;
         next: LRStateNodeForShow;
     }[];
+    isCollision: boolean;
     acc?: boolean;
 };
 type LRPredictTableLine = {
@@ -72,6 +76,19 @@ type LRPredictLine = {
     move?: string;
 };
 type LRPredictResultTable = Array<LRPredictLine>;
+type LRPredictLineWithAST = {
+    stack: number[];
+    symbols: LRASTNode[];
+    input: string[];
+    move?: string;
+};
+type LRPredictResultTableWithASTNode = Array<LRPredictLineWithAST>;
+type LRASTNode = {
+    id: any;
+    text: string;
+    check?: boolean;
+    children?: LRASTNode[];
+};
 
 declare class Lexer {
     nonTerminals: Array<string>;
@@ -81,6 +98,7 @@ declare class Lexer {
     source: string;
     constructor(terminals: Array<[string, RegExp]>, nonTerminals: Array<string>);
     setSource(source: string): void;
+    getSource(): void;
     remainString(): string;
     next(): Tocken;
     pop(): Tocken;
@@ -128,6 +146,8 @@ declare class LRParser {
     generateState(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): void;
     generateStateProgressive(grammers: string[], parseStartNonTerminal: string, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): IterableIterator<undefined>;
     predictInput(input: string, predictTable: LRPredictTable): LRPredictResultTable;
+    predictInputWithAST(input: string, predictTable: LRPredictTable): LRPredictResultTableWithASTNode;
+    predictInputProgressive(input: string, predictTable: LRPredictTable): IterableIterator<LRPredictResultTableWithASTNode>;
     generateLR0PredictTable(): LRPredictTable;
     generateSLR1PredictTable(): LRPredictTable;
     get stateGraph(): LRStateNodeForShow;

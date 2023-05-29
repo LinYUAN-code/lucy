@@ -357,8 +357,8 @@ export class LRParser  {
                 // reduce
                 step.move = `根据${cMove}归约`;
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
-                const nonTerminal = grammer.split("=>")[0];
-                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
+                const nonTerminal = grammer.split("->")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("->")[1]); // 这有问题
                const parentNode:LRASTNode={id:lid+1,text:nonTerminal};
                 if(!parentNode.children){
                         parentNode.children=[];

@@ -350,7 +350,7 @@ export class LRParser  {
                 // shift
                 step.move = `移入${step.input[0]}`;
                 //next.symbols.push(next.input.shift()!); // shuft把input的第一个元素删除并返回
-                const lrnode:LRASTNode={id:lid,text:next.input.shift()!}
+                const lrnode:LRASTNode={id:lid,text:next.input.shift()!,check: false}
                 next.symbols.push(lrnode);
                 next.stack.push(Number(cMove.slice(1)));
             } else {
@@ -359,7 +359,7 @@ export class LRParser  {
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
                 const nonTerminal = grammer.split("->")[0];
                 const derivation = this.lexer.splitDerivation(grammer.split("->")[1]);
-                const parentNode:LRASTNode={id:lid+1,text:nonTerminal};
+                const parentNode:LRASTNode={id:lid+1,text:nonTerminal,check: false};
                 if(!parentNode.children){
                     parentNode.children=[];
                 }
@@ -424,7 +424,7 @@ export class LRParser  {
                 // shift
                 step.move = `移入${step.input[0]}`;
                 //next.symbols.push(next.input.shift()!); // shuft把input的第一个元素删除并返回
-                const lrnode:LRASTNode={id:lid,text:next.input.shift()!}
+                const lrnode:LRASTNode={id:lid,text:next.input.shift()!,check: false}
                 next.symbols.push(lrnode);
                 next.stack.push(Number(cMove.slice(1)));
             } else {
@@ -433,7 +433,7 @@ export class LRParser  {
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
                 const nonTerminal = grammer.split("->")[0];
                 const derivation = this.lexer.splitDerivation(grammer.split("->")[1]);
-                const parentNode:LRASTNode={id:lid-1,text:nonTerminal};
+                const parentNode:LRASTNode={id:lid-1,text:nonTerminal,check: false};
                 if(!parentNode.children){
                     parentNode.children=[];
                 }
@@ -623,7 +623,7 @@ export class LRParser  {
                 if(item.matchPoint === item.derivation.length) {
                     reduceNum++;
                 }
-                if(this.lexer?.isTerminal(item.derivation[item.matchPoint])  ){
+                if(this.lexer?.isTerminal(item.derivation[item.matchPoint])){
                     shiftNum++;
                 } 
             })
@@ -631,7 +631,7 @@ export class LRParser  {
                 newNode.isCollision = true;
             } else {
                 if(reduceNum>=1 && shiftNum>0){
-                     newNode.isCollision = true;
+                    newNode.isCollision = true;
                 }
                 newNode.isCollision = false;
             }

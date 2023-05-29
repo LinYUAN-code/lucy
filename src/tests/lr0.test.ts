@@ -63,6 +63,7 @@ test("SLR2",() => {
     const terminals: [string,RegExp][] = [["+",/^\+/],["*",/^\*/],["(",/^\(/],[")",/^\)/],["id",/^id/]];
     lRParser.generateState(grammers,"E",nonTerminals,terminals);
     const stateNode = lRParser.stateGraph;
+    
     const predictTable = lRParser.generateSLR1PredictTable();
     log.log(stateNode,predictTable);
     const predictResult = lRParser.predictInputWithAST("id * id + id",predictTable);

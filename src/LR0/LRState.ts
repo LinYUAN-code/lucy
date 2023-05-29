@@ -632,8 +632,9 @@ export class LRParser  {
             } else {
                 if(reduceNum>=1 && shiftNum>0){
                     newNode.isCollision = true;
+                }else{
+                    newNode.isCollision = false;
                 }
-                newNode.isCollision = false;
             }
             newNode.items = node.items.map((item: any)=>{
                 return stateItemToString(item);

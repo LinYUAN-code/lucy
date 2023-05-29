@@ -76,7 +76,7 @@ export default class Lexer {
         }
         return tocken;
     }
-    public isTerminal(str: string) {
+    public isTerminal(str: string):boolean {
         let isTerminal = true;
         this.nonTerminals.some(v => {
             if (v === str) {

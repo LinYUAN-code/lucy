@@ -296,8 +296,8 @@ export class LRParser  {
                 // reduce
                 step.move = `根据${cMove}归约`;
                 const grammer = cMove.slice(2,-1).replaceAll(/\s/g,"");
-                const nonTerminal = grammer.split("=>")[0];
-                const derivation = this.lexer.splitDerivation(grammer.split("=>")[1]);
+                const nonTerminal = grammer.split("->")[0];
+                const derivation = this.lexer.splitDerivation(grammer.split("->")[1]);
                 for(let i=0;i<derivation.length;i++) {
                     next.stack.pop();
                     next.symbols.pop();
@@ -344,10 +344,10 @@ export class LRParser  {
             for(let item of stateNode.items) {
                 if(item.matchPoint === item.derivation.length) { // reduce
                     for(let terminal of this.lexer.terminals) {
-                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} -> ${item.derivation.join(" ")})`);
                     }
                     if(!predictLine.action.get(EndingCharacter)?.length) {
-                        predictLine.action.get(EndingCharacter)!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                        predictLine.action.get(EndingCharacter)!.push(`r(${item.nonTerminal} -> ${item.derivation.join(" ")})`);
                     }
                 }
             }
@@ -445,7 +445,7 @@ export class LRParser  {
                         }
                     }
                     for(let terminal of followCh) {
-                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} => ${item.derivation.join(" ")})`);
+                        predictLine.action.get(terminal[0])!.push(`r(${item.nonTerminal} -> ${item.derivation.join(" ")})`);
                     }
                 }
             }

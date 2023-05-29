@@ -12,20 +12,20 @@ export type Tocken = {
 export type NonTerminal = string;
 export type Terminal = string;
 export type Grammer = {
-  nonTerminal: NonTerminal,
-  derivations: Array<Array<NonTerminal | Terminal>>
+  nonTerminal: NonTerminal,  // 文法左侧的非终结符号
+  derivations: Array<Array<NonTerminal | Terminal>> // 文法右侧的产生式分割成数组
 };
 export type Grammers = Array<Grammer>;
 export type GrammerSetLine = {
-  tocken: NonTerminal | Terminal;
-  terminals: Set<Terminal>;
+  tocken: NonTerminal | Terminal; // 符号
+  terminals: Set<Terminal>; // 符号所对应的终结符集合
   isTerminal?: boolean;
 };
 export type GrammerSet = Array<GrammerSetLine>;
 
 export type PredictLine = {
-  nonTerminal: string;
-  terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;
+  nonTerminal: string; // 该行所对应的非终结符
+  terminal2Derivation: Map<Terminal, Grammer> | Record<string, any>;// 该终结符遇到下一个字符对应的文法动作
 };
 export type PredictTable = Array<PredictLine>;
 
@@ -43,15 +43,15 @@ export type Process<T> = {
 }
 
 export type LRStateNodeItem = {
-  nonTerminal: NonTerminal;
-  derivation: string[];
-  matchPoint: number; // such * A ==> 0    A * b  ===> 1
-  lookAheadTocken?: string[];
+  nonTerminal: NonTerminal; // 非终结符
+  derivation: string[]; // 产生式
+  matchPoint: number; // 匹配点的位置 示例: · A ==> 0    A · b  ===> 1
+  lookAheadTocken?: string[]; // 向前看符号
 }
 export type LRStateNode = {
-  id: number;
-  items: LRStateNodeItem[];
-  edges: {
+  id: number; // 状态节点id
+  items: LRStateNodeItem[]; // 项集
+  edges: {  // GOTO边
     tocken: NonTerminal | Terminal;
     next: LRStateNode;
   }[];

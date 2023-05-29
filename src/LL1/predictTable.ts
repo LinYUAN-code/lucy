@@ -153,7 +153,7 @@ export function predict(lexer: Lexer, table: PredictTable, _input: string, parse
                 throw new Error(`[预测错误] 分析输入错误  终结符: ${terminal}   剩余字符串: ${lexer.remainString()} 文法: ${grammer} `);
                 // throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
             }
-            currentState.parseAction = `Predict ${grammer.nonTerminal} => ${grammer.derivations[0].join(" ")}`;
+            currentState.parseAction = `Predict ${grammer.nonTerminal} -> ${grammer.derivations[0].join(" ")}`;
             log.log("[predict State]", currentState);
             predictProcess.push(currentState);
             currentState = JSON.parse(JSON.stringify(currentState));
@@ -247,7 +247,7 @@ export function* predictProgressive(lexer: Lexer, table: PredictTable, _input: s
                 throw new Error(`[预测错误] 分析输入错误  终结符: ${terminal}   剩余字符串: ${lexer.remainString()} 文法: ${grammer} `);
                 // throw new Error(`[predict error] parse input fail \n terminal: ${terminal} \n  remainingInput: ${lexer.remainString()} \n grammer: ${grammer} `);
             }
-            currentState.parseAction = `Predict ${grammer.nonTerminal} => ${grammer.derivations[0].join(" ")}`;
+            currentState.parseAction = `Predict ${grammer.nonTerminal} -> ${grammer.derivations[0].join(" ")}`;
             log.log("[predict State]", currentState);
             predictProcess.push(currentState);
             currentState = JSON.parse(JSON.stringify(currentState));

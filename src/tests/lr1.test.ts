@@ -4,9 +4,9 @@ import log, { nullLogChannel } from "@/utils/log";
 
 test("LR1", () => {
     let grammers = [
-        "S => AB",
-        "A => a",
-        "B => S | b",
+        "S -> AB",
+        "A -> a",
+        "B -> S | b",
     ]
     log.logTo(nullLogChannel);
     const lRParser = new LR1Parser();
@@ -22,8 +22,8 @@ test("LR1", () => {
 
 test("LALR ", () => {
     let grammers = [
-        "S => B B",
-        "B => a B | b",
+        "S -> B B",
+        "B -> a B | b",
     ]
     log.logTo(nullLogChannel);
     const lRParser = new LR1Parser();

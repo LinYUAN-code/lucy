@@ -145,7 +145,7 @@ const testCases: Array<{
                 "nonTerminal": "E'",
                 "terminal2Derivation": {
                     "+": { "nonTerminal": "E'", "derivations": [["+", "T", "E'"]] },
-                    "$": { "nonTerminal": "E'", "derivations": [["ε"]] },
+                    "   ": { "nonTerminal": "E'", "derivations": [["ε"]] },
                     ")": { "nonTerminal": "E'", "derivations": [["ε"]] }
                 }
             },

@@ -4,11 +4,11 @@ import { LL1Parser } from "..";
 
 test("unionGrammers", () => {
     let grammers = [
-        "S  =>  A B | a | b",
-        "S  =>  A B | a | b",
-        "S  =>  A B | a | b",
-        "A  =>  a",
-        "B  =>  b",
+        "S  ->  A B | a | b",
+        "S  ->  A B | a | b",
+        "S  ->  A B | a | b",
+        "A  ->  a",
+        "B  ->  b",
     ]
     grammers = unionGrammers(grammers);
     console.log(grammers);
@@ -21,11 +21,11 @@ test("unionGrammers", () => {
 
 test("first set test", () => {
     const grammers = [
-        "S  =>  AB",
-        "A  =>  Ca | ε",
-        "B  =>  cB'",
-        "B' =>  aACB' | ε",
-        "C  =>  b | ε"
+        "S  ->  AB",
+        "A  ->  Ca | ε",
+        "B  ->  cB'",
+        "B' ->  aACB' | ε",
+        "C  ->  b | ε"
     ]
     log.logTo(nullLogChannel);
     const { nonTerminals, terminals } = getTockFromSimpleGrammers(grammers);
@@ -38,14 +38,14 @@ test("first set test", () => {
 
 test("simple set test", () => {
     let grammers = [
-        "S  =>  AB",
-        "S  =>  SCa | h",
-        "S =>  AACB | AAdd",
-        "C  =>  b",
-        "C => l",
-        "A => a",
-        "B => b",
-        "C => c",
+        "S  ->  AB",
+        "S  ->  SCa | h",
+        "S ->  AACB | AAdd",
+        "C  ->  b",
+        "C -> l",
+        "A -> a",
+        "B -> b",
+        "C -> c",
     ]
     // log.logTo(nullLogChannel);
     grammers = unionGrammers(grammers);
@@ -58,8 +58,8 @@ test("simple set test", () => {
 
 test("clearRightRecursion test", () => {
     let grammers = [
-        "S  =>  Aa | b",
-        "A => Ac | Sd | ε",
+        "S  ->  Aa | b",
+        "A -> Ac | Sd | ε",
     ]
     log.logTo(nullLogChannel);
     grammers = unionGrammers(grammers);

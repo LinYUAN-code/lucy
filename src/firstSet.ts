@@ -172,11 +172,11 @@ export function getDerivationFirstSetWithMap(lexer: Lexer, derivation: string[],
 export function* generateFirstSetProgressive(lexer: Lexer, inGrammers: Array<string>): IterableIterator<Rule | Process<GrammerSet>> {
     yield [
         "1. 如果X式一个终结符号，那么FIRST(X) = X ",
-        "2. 如果 X => ε 是一个产生式，那么将e加人到 FIRST（X)中。",
-        `3. A => B0B1B2B3，i = 0，循环i
-            FIRST(Bi) - EmptyCharacter 加入到 FIRST(A)中
-            如果FIRST(B1)不含有EmptyCharacter退出循环
-            若B0 - B3均含有EmptyCharacter 将EmptyCharacter加入到FIRST(A)中
+        "2. 如果 X -> ε 是一个产生式，那么将e加人到 FIRST（X)中。",
+        `3. A -> B0B1B2B3，i = 0，循环i
+            FIRST(Bi) - ε 加入到 FIRST(A)中
+            如果FIRST(B1)ε
+            若B0 - B3均含有ε，将ε加入到FIRST(A)中
         `,
         "4. 去除所有终结符号的表项",
     ]

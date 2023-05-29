@@ -114,7 +114,7 @@ export function unionGrammers(grammers: Array<string>, nonTerminals?: Array<stri
     })
     for (let nonTerminal of unionMap.keys()) {
         const derivations = [...new Set(unionMap.get(nonTerminal)!)];
-        result.push(`${nonTerminal} => ${derivations.join("|")}`.split("|").join(" | "));
+        result.push(`${nonTerminal} -> ${derivations.join("|")}`.split("|").join(" | "));
     }
     log.log(result);
     return result;
@@ -195,9 +195,9 @@ export function liftUpCommonTocken(grammers: Array<string>, nonTerminals?: Array
                 // 可以提取公因子
                 const newUnTerminal = lexer.getNewNonTerminal(nonTerminal);
                 newDerivation.push(tocken + newUnTerminal);
-                newAddGrammers.push(newUnTerminal + " => " + derivations?.map(v => v.join(" ")).join(" | "));
+                newAddGrammers.push(newUnTerminal + " -> " + derivations?.map(v => v.join(" ")).join(" | "));
             }
-            return nonTerminal + " => " + newDerivation.join(" | ");
+            return nonTerminal + " -> " + newDerivation.join(" | ");
         });
         log.log("[pre]", tmpResult, newAddGrammers);
         const newResult = [...tmpResult, ...newAddGrammers];
@@ -251,6 +251,7 @@ export function checkNeedClearRightRecursion(grammers: Array<string>, nonTermina
     直接左递归-间接左递归
     要求： 输入文法不含有EmptyCharater 和 环
 */
+// TODO! clearLeftRecursion 名字打错了要改
 export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Array<string>, terminals?: Array<[string, RegExp]>): Array<string> {
     const result: Array<string> = [];
     if (!nonTerminals || !terminals) {
@@ -322,7 +323,7 @@ export function clearRightRecursion(grammers: Array<string>, nonTerminals?: Arra
         const derivation: string = nonTerminals2DerivationMap.get(nonTerminal)!.map(derivation => {
             return derivation.join(" ");
         }).join(" | ");
-        result.push(`${nonTerminal} => ${derivation}`);
+        result.push(`${nonTerminal} -> ${derivation}`);
     }
     return result;
 }

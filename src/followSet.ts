@@ -122,8 +122,8 @@ export default function generateFllowSet(lexer: Lexer, inGrammers: Array<string>
 export function* generateFllowSetProgressive(lexer: Lexer, inGrammers: Array<string>, firstSet?: GrammerSet): IterableIterator<Rule | Process<GrammerSet>> {
     yield [
         "1. 将$放到FOLLOW(S)中",
-        "2. 如果存在一个产生式A => aBb ， 那么FIRST(b) 中除ε 之外的所有符号都在FOLLOW(B)中。attention: A => aBCd 那么把first(Cd)加入到Follow(B)中去",
-        "3.如果存在一个产生式 A => aB ， 或存在产生式 A => aBb 且FIRST(b) 包含 ε ，那么FOLLOW(A)中的所有符号都在FOLLOW(B)中。",
+        "2. 如果存在一个产生式A -> aBb ， 那么FIRST(b) 中除ε 之外的所有符号都在FOLLOW(B)中。attention: A -> aBCd 那么把first(Cd)加入到Follow(B)中去",
+        "3.如果存在一个产生式 A -> aB ， 或存在产生式 A -> aBb 且FIRST(b) 包含 ε ，那么FOLLOW(A)中的所有符号都在FOLLOW(B)中。",
         "4. 去除所有终结符号的表项",
     ]
     log.log("[generateFllowSet start]");

@@ -622,8 +622,7 @@ export class LRParser  {
             node.items?.forEach((item: LRStateNodeItem)=>{
                 if(item.matchPoint === item.derivation.length) {
                     reduceNum++;
-                }
-                if(this.lexer?.isTerminal(item.derivation[item.matchPoint])){
+                }else if(this.lexer?.isTerminal(item.derivation[item.matchPoint])){
                     shiftNum++;
                 } 
             })
